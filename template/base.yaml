@@ -8,8 +8,8 @@ crd-meta:
   kind: JointMultiEdgeService
 default-image-meta:
   registry: repo:5000
-  repository: onecheck
-  tag: v3.0.0
+  repository: dayuhub
+  tag: v1.0
 default-file-mount-prefix: "/data/Dayu-Files"
 datasource:
   use-simulation: true

@@ -65,8 +65,8 @@ declare -A SPECIAL_BUILD=(
 
 # Initialize variables
 SELECTED_FILES=""
-TAG="v3.0.0"  # Default tag
-REPO="onecheck"  # Default repository
+TAG="v1.0"  # Default tag
+REPO="dayu"  # Default repository
 NO_CACHE=false  # Default is to use cache
 REGISTRY="${REG:-docker.io}"
 
