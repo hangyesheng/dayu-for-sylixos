@@ -23,18 +23,18 @@ EOF
 
 # Default Dockerfiles and their platforms
 declare -A DOCKERFILES=(
-    [backend]="templates/dockerfile/backend.Dockerfile"
-    [frontend]="templates/dockerfile/frontend.Dockerfile"
-    [datasource]="templates/dockerfile/datasource.Dockerfile"
+    [backend]="build/backend.Dockerfile"
+    [frontend]="build/frontend.Dockerfile"
+    [datasource]="build/datasource.Dockerfile"
 
-    [generator]="templates/dockerfile/generator.Dockerfile"
-    [distributor]="templates/dockerfile/distributor.Dockerfile"
-    [controller]="templates/dockerfile/controller.Dockerfile"
-    [monitor]="templates/dockerfile/monitor.Dockerfile"
-    [scheduler]="templates/dockerfile/scheduler.Dockerfile"
-    [car-detection]="templates/dockerfile/car_detection_[amd64/arm64].Dockerfile"
-    [face-detection]="templates/dockerfile/face_detection_[amd64/arm64].Dockerfile"
-    [gender-classification]="templates/dockerfile/gender_classification_[amd64/arm64].Dockerfile"
+    [generator]="build/generator.Dockerfile"
+    [distributor]="build/distributor.Dockerfile"
+    [controller]="build/controller.Dockerfile"
+    [monitor]="build/monitor.Dockerfile"
+    [scheduler]="build/scheduler.Dockerfile"
+    [car-detection]="build/car_detection_[amd64/arm64].Dockerfile"
+    [face-detection]="build/face_detection_[amd64/arm64].Dockerfile"
+    [gender-classification]="build/gender_classification_[amd64/arm64].Dockerfile"
 
 )
 
@@ -57,9 +57,9 @@ declare -A PLATFORMS=(
 
 # Images requiring special treatment, their platforms, and Dockerfiles
 declare -A SPECIAL_BUILD=(
-    [car-detection]="linux/amd64:templates/dockerfile/car_detection_amd64.Dockerfile,linux/arm64:templates/dockerfile/car_detection_arm64.Dockerfile"
-    [face-detection]="linux/amd64:templates/dockerfile/face_detection_amd64.Dockerfile,linux/arm64:templates/dockerfile/face_detection_arm64.Dockerfile"
-    [gender-classification]="linux/amd64:templates/dockerfile/gender_classification_amd64.Dockerfile,linux/arm64:templates/dockerfile/gender_classification_arm64.Dockerfile"
+    [car-detection]="linux/amd64:build/car_detection_amd64.Dockerfile,linux/arm64:build/car_detection_arm64.Dockerfile"
+    [face-detection]="linux/amd64:build/face_detection_amd64.Dockerfile,linux/arm64:build/face_detection_arm64.Dockerfile"
+    [gender-classification]="linux/amd64:build/gender_classification_amd64.Dockerfile,linux/arm64:build/gender_classification_arm64.Dockerfile"
 
 )
 
