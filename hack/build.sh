@@ -66,7 +66,7 @@ declare -A SPECIAL_BUILD=(
 # Initialize variables
 SELECTED_FILES=""
 TAG="v1.0"  # Default tag
-REPO="dayu"  # Default repository
+REPO="dayuhub"  # Default repository
 NO_CACHE=false  # Default is to use cache
 REGISTRY="${REG:-docker.io}"
 
