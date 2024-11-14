@@ -1,0 +1,52 @@
+namespace: dayu
+log-level: DEBUG
+pod-permission:
+  service-account: worker-admin
+  cluster-role-binding: worker-admin-binding
+crd-meta:
+  api-version: sedna.io/v1alpha1
+  kind: JointMultiEdgeService
+default-image-meta:
+  registry: repo:5000
+  repository: onecheck
+  tag: v3.0.0
+default-file-mount-prefix: "/data/Dayu-Files"
+datasource:
+  use-simulation: true
+  node: edgex1
+  data-root: "/data/datasource/"
+scheduler-policies:
+  - id: fixed
+    name: fixed policy
+    yaml: fixed-policy.yaml
+    dependency:
+      generator: generator-base.yaml
+      controller: controller-base.yaml
+      distributor: distributor-base.yaml
+      monitor: monitor-base.yaml
+services:
+  - id: car-detection
+    name: car detection
+    description: car detection
+    input: frame
+    output: bbox
+    yaml: car-detection.yaml
+  - id: face-detection
+    name: face detection
+    description: face detection
+    input: frame
+    output: bbox
+    yaml: face-detection.yaml
+  - id: gender-classification
+    name: gender classification
+    description: gender classification
+    input: bbox
+    output: text
+    yaml: gender-classification.yaml
+  - id: age-classification
+    name: age classification
+    description: age classification
+    input: bbox
+    output: text
+    yaml: age-classification.yaml
+

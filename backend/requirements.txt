@@ -1,0 +1,4 @@
+opencv-python-headless
+psutil
+pytz
+func_timeout

@@ -1,0 +1,12 @@
+position: both
+pod-template:
+  image: monitor
+  imagePullPolicy: IfNotPresent
+  env:
+    - name: INTERVAL
+      value: "5"
+    - name: MONITORS
+      value: "['cpu', 'memory', 'bandwidth']"
+port-open:
+  pos: cloud
+  port: 9000

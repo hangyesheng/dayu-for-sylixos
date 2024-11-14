@@ -1,0 +1,9 @@
+position: cloud
+pod-template:
+  image: distributor
+  imagePullPolicy: IfNotPresent
+  env:
+port-open:
+  pos: cloud
+  port: 9000
+
