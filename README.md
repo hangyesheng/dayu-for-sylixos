@@ -8,7 +8,7 @@ English | [简体中文](./README_zh.md)
 ## Brief Introduction
 
 
-Dayu is an automated scheduling system for edge computing in stream data processing. Auto-Edge supports pipeline service processing of multi data stream and focus on the scheduling policy in edge computing. It's developed based on KubeEdge and can be easily migrated.
+Dayu is an automated scheduling system for edge computing in stream data processing. Dayu supports pipeline service processing of multi data stream and focus on the scheduling policy in edge computing. It's developed based on KubeEdge and can be easily migrated.
 
 ## Related Framework
 - [Docker Container](https://github.com/docker/docker-ce)

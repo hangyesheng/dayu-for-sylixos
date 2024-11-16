@@ -1,14 +1,14 @@
-# Docker Containers for AutoEdge System
+# Docker Containers for Dayu System
 
 ## introduction
 
-Auto-Edge is based on KubeEdge, which is a distributed cloud-edge system with docker containers. Thus, each component of our system is in the form of docker container.
+Dayu is based on KubeEdge, which is a distributed cloud-edge system with docker containers. Thus, each component of our system is in the form of docker container.
 
 To be noted, usually we take server with NVIDIA GPU for cloud (which is amd64 architecture) and take NVIDIA Jetson devices as edge (which are arm64 architecture). Therefore, building dockers should be carefully for architectures.
 
 ## Basic Source
 
-Here list basic docker images used in Auto-Edge system. Our own images can be built by dockerfiles in [this folder](../dockerfile).
+Here list basic docker images used in Dayu system. Our own images can be built by dockerfiles in [this folder](../dockerfile).
 
 **Tips**: If you have difficulty visiting [dockerhub](https://hub.docker.com/), constructing a private docker registry is recommended. Then you can replace `docker.io` as your registry address. **[Here](../../instructions/private_docker_registry.md) is a short instruction you can refer to.** 
 
