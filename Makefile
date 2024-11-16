@@ -25,15 +25,15 @@ help:
 	@echo "$$BUILD_HELP_INFO"
 else
 help:
-	@./hack/build.sh --help
+	bash ./hack/build.sh --help
 endif
 
 # Build images
 build:
-	@./hack/build.sh --files $(WHAT) --tag $(TAG) --repo $(REPO) --registry $(REGISTRY) --no-cache
+	bash ./hack/build.sh --files $(WHAT) --tag $(TAG) --repo $(REPO) --registry $(REGISTRY) --no-cache
 
 # Build all images
 images:
-	@./hack/build.sh --tag $(TAG) --repo $(REPO) --registry $(REGISTRY) --no-cache
+	bash ./hack/build.sh --tag $(TAG) --repo $(REPO) --registry $(REGISTRY) --no-cache
 
 
