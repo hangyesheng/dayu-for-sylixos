@@ -240,7 +240,7 @@ class TemplateHelper:
 
             # only test bandwidth for one edge
             for parameter in new_edge_worker['template']['spec']['containers'][0]['env']:
-                if parameter['name'] == 'monitor_parameters':
+                if parameter['name'] == 'MONITORS':
                     parameter_list = eval(parameter['value'])
                     if index != 0 and 'bandwidth' in parameter_list:
                         parameter_list.remove('bandwidth')

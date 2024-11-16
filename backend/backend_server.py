@@ -311,9 +311,10 @@ class BackendServer:
             resource_data = http_request(self.server.resource_url, method=NetworkAPIMethod.SCHEDULER_GET_RESOURCE)
             if resource_data:
                 bandwidth = '-'
-                for single_info in info:
-                    if resource_data[single_info['hostname']]['bandwidth'] != 0:
-                        bandwidth = f"{resource_data[single_info['hostname']]['bandwidth']:.2f}Mbps"
+                for hostname in resource_data:
+                    single_resource_info = resource_data[hostname]
+                    if 'bandwidth' in single_resource_info and single_resource_info['bandwidth'] != 0:
+                        bandwidth = f"{single_resource_info['bandwidth']:.2f}Mbps"
                 for single_info in info:
                     single_info['bandwidth'] = bandwidth
         except Exception as e:
