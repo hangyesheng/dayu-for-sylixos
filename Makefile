@@ -8,17 +8,17 @@ define BUILD_HELP_INFO
 #
 # Usage:
 #   make build WHAT=component
-#   make images
+#   make all
 #
 # Components:
 #   backend, frontend, datasource, generator, distributor, controller, monitor, scheduler, car-detection, etc.
 #
 # Example:
 #   make build WHAT=monitor,generator
-#   make images
+#   make all
 endef
 
-.PHONY: build images help
+.PHONY: build all help
 
 
 help:
@@ -30,7 +30,7 @@ build:
 	bash ./hack/build.sh --files $(WHAT) --tag $(IMAGE_TAG) --repo $(REPOSITORY) --registry $(REGISTRY)
 
 # Build all images
-images:
+all:
 	bash ./hack/build.sh --tag $(IMAGE_TAG) --repo $(REPOSITORY) --registry $(REGISTRY)
 
 
