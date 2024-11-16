@@ -1,5 +1,5 @@
 ARG REG=docker.io
-FROM ${REG}/onecheck/rtsp-server
+FROM ${REG}/dayuhub/rtsp-server
 
 LABEL authors="skyrim"
 

@@ -13,8 +13,8 @@ Usage: ${0##*/} [--files [generator,distributor,controller,monitor,scheduler,car
                scheduler
                car-detection
                Default is to select all.
---tag          Specify the version tag for the Docker images. Default is "v2.0.0".
---repo         Specify the repository for the Docker images. Default is "onecheck".
+--tag          Specify the version tag for the Docker images. Default is "v1.0".
+--repo         Specify the repository for the Docker images. Default is "dayuhub".
 --registry     Specify the registry of docker.
 --no-cache     Build the Docker images without using cache.
 --help         Display this help message and exit.

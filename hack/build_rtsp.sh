@@ -3,18 +3,13 @@
 # Function: Display help information
 show_help() {
 cat << EOF
-Usage: ${0##*/} [--files [generator,distributor,controller,monitor,scheduler,car-detection...]] [--tag TAG] [--repo REPO] [--no-cache] [--help]
+Usage: ${0##*/} [--files [rtsp-server]] [--tag TAG] [--repo REPO] [--no-cache] [--help]
 
 --files        Specify the images to build, separated by commas. Options include:
-               generator
-               distributor
-               controller
-               monitor
-               scheduler
-               car-detection
+               rtsp_server
                Default is to select all.
---tag          Specify the version tag for the Docker images. Default is "v2.0.0".
---repo         Specify the repository for the Docker images. Default is "onecheck".
+--tag          Specify the version tag for the Docker images. Default is "latest".
+--repo         Specify the repository for the Docker images. Default is "dayuhub".
 --registry     Specify the registry of docker.
 --no-cache     Build the Docker images without using cache.
 --help         Display this help message and exit.
@@ -39,7 +34,7 @@ declare -A SPECIAL_BUILD=(
 # Initialize variables
 SELECTED_FILES=""
 TAG="latest"  # Default tag
-REPO="onecheck"  # Default repository
+REPO="dayuhub"  # Default repository
 NO_CACHE=false  # Default is to use cache
 REGISTRY="${REG:-docker.io}"
 

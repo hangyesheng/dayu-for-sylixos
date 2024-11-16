@@ -14,7 +14,7 @@
 
           <el-tooltip placement="right">
             <template #content>
-              From docker Registry: https://hub.docker.com/repositories/onecheck
+              From docker Registry: https://hub.docker.com/repositories/dayuhub
             </template>
             <el-button size="small" circle>i</el-button>
           </el-tooltip>

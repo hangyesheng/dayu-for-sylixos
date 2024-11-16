@@ -13,7 +13,7 @@ Here list basic docker images used in Dayu system. Our own images can be built b
 **Tips**: If you have difficulty visiting [dockerhub](https://hub.docker.com/), constructing a private docker registry is recommended. Then you can replace `docker.io` as your registry address. **[Here](../../instructions/private_docker_registry.md) is a short instruction you can refer to.** 
 
 
-```bash
+```
 # From others
 nvcr.io/nvidia/l4t-pytorch:r32.7.1-pth1.10-py3  (arm64)
 docker.io/yuefan2022/tensorrt-ubuntu20.04-cuda11.6  (amd64)
@@ -24,16 +24,19 @@ docker.io/python:3.6  (amd64/arm64)
 
 
 # Our own images
-docker.io/onecheck/tensorrt:trt8  (amd64/arm64)
+docker.io/dayuhub/tensorrt:trt8  (amd64/arm64)
 
-docker.io/onecheck/generator:v3.0.0  (arm64)
-docker.io/onecheck/controller:v3.0.0  (amd64/arm64)
-docker.io/onecheck/dsitributor:v3.0.0  (amd64)
-docker.io/onecheck/scheduler:v3.0.0  (amd64)
-docker.io/onecheck/monitor:v3.0.0  (amd64/arm64)
-docker.io/onecheck/car-detection:v3.0.0  (amd64/arm64)
-docker.io/onecheck/face-detection:v3.0.0  (amd64/arm64)
-docker.io/onecheck/gender-classification:v3.0.0  (amd64/arm64)
+docker.io/dayuhub/generator:{VERSION} (arm64)
+docker.io/dayuhub/controller:{VERSION}  (amd64/arm64)
+docker.io/dayuhub/dsitributor:{VERSION}  (amd64)
+docker.io/dayuhub/scheduler:{VERSION}  (amd64)
+docker.io/dayuhub/monitor:{VERSION}  (amd64/arm64)
+docker.io/dayuhub/car-detection:{VERSION}  (amd64/arm64)
+docker.io/dayuhub/face-detection:{VERSION}  (amd64/arm64)
+docker.io/dayuhub/gender-classification:{VERSION}  (amd64/arm64)
+docker.io/dayuhub/backend:{VERSION} (amd64)
+docker.io/dayuhub/frontend:{VERSION} (amd64)
+docker.io/dayuhub/datasource:{VERSION} (arm64)
 
 ```
 
