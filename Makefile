@@ -11,7 +11,7 @@ define BUILD_HELP_INFO
 #   make images
 #
 # Components:
-#   generator, distributor, controller, monitor, scheduler, car-detection, etc.
+#   backend, frontend, datasource, generator, distributor, controller, monitor, scheduler, car-detection, etc.
 #
 # Example:
 #   make build WHAT=monitor,generator
@@ -20,20 +20,17 @@ endef
 
 .PHONY: build images help
 
-ifeq ($(HELP),y)
+
 help:
 	@echo "$$BUILD_HELP_INFO"
-else
-help:
-	bash ./hack/build.sh --help
-endif
+
 
 # Build images
 build:
-	bash ./hack/build.sh --files $(WHAT) --tag $(TAG) --repo $(REPO) --registry $(REGISTRY) --no-cache
+	bash ./hack/build.sh --files $(WHAT) --tag $(IMAGE_TAG) --repo $(REPOSITORY) --registry $(REGISTRY)
 
 # Build all images
 images:
-	bash ./hack/build.sh --tag $(TAG) --repo $(REPO) --registry $(REGISTRY) --no-cache
+	bash ./hack/build.sh --tag $(IMAGE_TAG) --repo $(REPOSITORY) --registry $(REGISTRY)
 
 
