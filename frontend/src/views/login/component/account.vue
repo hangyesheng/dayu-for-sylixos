@@ -9,7 +9,7 @@
 		</el-form-item>
 		<el-form-item class="login-animation3">
 
-      <div >Version: v3.0</div>
+      <div >Version: v1.0</div>
 		</el-form-item>
 		<el-form-item class="login-animation4">
 			<el-button type="primary" class="login-content-submit" round v-waves @click="onSignIn" :loading="state.loading.signIn">
