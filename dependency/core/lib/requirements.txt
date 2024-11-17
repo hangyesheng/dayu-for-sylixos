@@ -1,4 +1,3 @@
-
 colorlog
 requests
 kubernetes==20.11.0a1
@@ -11,4 +10,5 @@ joblib
 imagehash
 pillow
 annoy
+func_timeout
 
