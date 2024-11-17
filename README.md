@@ -90,7 +90,7 @@ ACTION=start TEMPLATE=template/ bash - dayu.sh
 ACTION=stop TEMPLATE=template/ bash - dayu.sh 
 ```
 
-## How to build
+## How to Build
 Components in Dayu system are dependent on docker containers. Thus, if you need to customize dayu system you should build specified images.
 
 The official images of Dayu system is at [dockerhub/dayuhub](https://hub.docker.com/u/dayuhub).
