@@ -1,7 +1,7 @@
 <template>
 	<el-form size="large" class="login-content-form">
 		<el-form-item class="login-animation1">
-      <div >Nanjing University</div>
+      <div >An auto scheduling system for stream data processing on distributed cloud-edge platforms</div>
 
 		</el-form-item>
 		<el-form-item class="login-animation2">
@@ -9,7 +9,7 @@
 		</el-form-item>
 		<el-form-item class="login-animation3">
 
-      <div >Version: v1.0</div>
+      <div >System Version: v1.0</div>
 		</el-form-item>
 		<el-form-item class="login-animation4">
 			<el-button type="primary" class="login-content-submit" round v-waves @click="onSignIn" :loading="state.loading.signIn">
