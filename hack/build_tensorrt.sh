@@ -18,7 +18,7 @@ EOF
 
 # Default Dockerfiles and their platforms
 declare -A DOCKERFILES=(
-    [tensorrt]="templates/dockerfile/tensorrt_[amd64/arm64].Dockerfile"
+    [tensorrt]="build/tensorrt_[amd64/arm64].Dockerfile"
 )
 
 # Corresponding platforms

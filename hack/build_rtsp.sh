@@ -18,7 +18,7 @@ EOF
 
 # Default Dockerfiles and their platforms
 declare -A DOCKERFILES=(
-    [rtsp-server]="templates/dockerfile/rtsp_server.Dockerfile"
+    [rtsp-server]="build/rtsp_server.Dockerfile"
 )
 
 # Corresponding platforms
