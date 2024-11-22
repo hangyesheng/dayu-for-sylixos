@@ -1,5 +1,4 @@
 ARG REG=docker.io
-ARG BUILDPLATFORM
 FROM ${REG}/python:3.8
 
 LABEL authors="skyrim"
@@ -14,11 +13,11 @@ WORKDIR /rtsp_server
 
 ENV RTSP_PATH="/rtsp_server"
 
-RUN ARCH=$(echo ${BUILDPLATFORM} | cut -d'/' -f2) && \
+ARG TARGETPLATFORM
+RUN ARCH=$(echo ${TARGETPLATFORM} | cut -d'/' -f2) && \
     case "$ARCH" in \
         amd64) ARCH_TYPE="linux_amd64";; \
         arm64) ARCH_TYPE="linux_arm64v8";; \
-        arm) ARCH_TYPE="linux_armv7";; \
         *) echo "Unsupported architecture: $ARCH" && exit 1;; \
     esac && \
     wget -O mediamtx.tar.gz https://github.com/bluenviron/mediamtx/releases/download/v1.9.3/mediamtx_v1.9.3_${ARCH_TYPE}.tar.gz && \
