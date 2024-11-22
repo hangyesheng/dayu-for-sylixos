@@ -18,12 +18,12 @@ EOF
 
 # Default Dockerfiles and their platforms
 declare -A DOCKERFILES=(
-    [rtsp-server]="templates/dockerfile/rtsp_server_arm64.Dockerfile"
+    [rtsp-server]="templates/dockerfile/rtsp_server.Dockerfile"
 )
 
 # Corresponding platforms
 declare -A PLATFORMS=(
-    [rtsp-server]="linux/arm64"
+    [rtsp-server]="linux/amd64,linux/arm64"
 )
 
 # Images requiring special treatment, their platforms, and Dockerfiles

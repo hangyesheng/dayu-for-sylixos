@@ -42,7 +42,7 @@ declare -A DOCKERFILES=(
 declare -A PLATFORMS=(
     [backend]="linux/amd64"
     [frontend]="linux/amd64"
-    [datasource]="linux/arm64"
+    [datasource]="linux/amd64,linux/arm64"
 
     [generator]="linux/arm64"
     [distributor]="linux/amd64"
