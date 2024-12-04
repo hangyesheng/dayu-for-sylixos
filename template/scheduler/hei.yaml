@@ -4,7 +4,9 @@ pod-template:
   imagePullPolicy: IfNotPresent
   env:
     - name: SCH_CONFIG_NAME
-      value: simple
+      value: hei
+    - name: SCH_CONFIG_PARAMETERS
+      value: "{'hei_drl_config':'drl_parameters.yaml', 'hei_hyper_config':'hyper_parameters.yaml'}"
     - name: SCH_SCENARIO_NAME
       value: simple
     - name: SCH_STARTUP_NAME
@@ -12,12 +14,14 @@ pod-template:
     - name: SCH_POLICY_NAME
       value: simple
     - name: SCH_AGENT_NAME
-      value: fixed
+      value: hei
     - name: SCH_AGENT_PARAMETERS
-      value: "{'fixed_policy':{'resolution': '720p','fps': 15,'encoding': 'mp4v','buffer_size': 4,'pipeline':1}}"
+      value: "{'window_size':8, 'mode':'train'}"
 port-open:
   pos: cloud
   port: 9000
 file-mount:
   - pos: cloud
-    path: 'scheduler/fixed'
+    path: 'scheduler/hei'
+  - pos: cloud
+    path:

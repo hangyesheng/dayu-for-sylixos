@@ -1,22 +1,49 @@
 import abc
-from core.lib.common import ClassFactory, ClassType
+import os
+
+from core.lib.common import ClassFactory, ClassType, Context, LOGGER, EncodeOps
+from core.lib.common import VideoOps, HashOps
+from core.lib.estimation import AccEstimator
+from core.lib.common import Queue, FileOps
+from core.lib.network import NodeInfo, get_merge_address, NetworkAPIPath, NetworkAPIMethod, PortInfo, http_request
+from core.lib.content import Task
 
 from .base_agent import BaseAgent
 import time
+import cv2
 
 __all__ = ('ChameleonAgent',)
+
+"""
+Chameleon Agent Class
+
+Implementation of Chameleon
+
+Jiang J, Ananthanarayanan G, Bodik P, et al. Chameleon: scalable adaptation of video analytics[C]//Proceedings of the 2018 conference of the ACM special interest group on data communication. 2018: 253-266.
+
+* Only suuport in http_video mode (need accuracy information)
+"""
 
 
 @ClassFactory.register(ClassType.SCH_AGENT, alias='chameleon')
 class ChameleonAgent(BaseAgent, abc.ABC):
 
-    def __init__(self, system, agent_id: int, fixed_policy: dict = None,
-                 best_num: int = 10, threshold=0.7,
+    def __init__(self, system, agent_id: int, fixed_policy: dict,
+                 best_num: int = 5, threshold=0.1,
                  profile_window=16, segment_size=4, calculate_time=1):
         self.agent_id = agent_id
         self.cloud_device = system.cloud_device
         self.schedule_plan = None
-        self.schedule_knobs = None
+
+        self.fixed_policy = fixed_policy
+
+        self.fps_list = system.fps_list.copy()
+        self.resolution_list = system.resolution_list.copy()
+
+        self.schedule_knobs = {'resolution': self.resolution_list,
+                               'fps': self.fps_list}
+
+        self.processor_hostname = NodeInfo.get_cloud_node()
 
         # 大周期、小周期(段)、计算best_num个配置所允许的最大耗时
         # 一个大周期里包含 profile_window / segment_size个段
@@ -36,15 +63,73 @@ class ChameleonAgent(BaseAgent, abc.ABC):
         self.all_config_list = self.get_all_knob_combinations()
 
         # 默认的"黄金配置"(精度最高、消耗最高的那个), 用于计算F1 score来对配置进行选择和排序
-        self.golden_config = {}
-        # 根据"黄金配置"求出的、用于获取F1-score的ground truth
-        self.ground_truth = []
+        self.golden_config = {'resolution': self.resolution_list[-1], 'fps': self.fps_list[-1]}
+
         # 选择配置时所需的最新视频帧,一般数量也就几十帧
-        self.raw_video = []
+        self.raw_frames = Queue(maxsize=30)
+
+        self.current_analytics = ''
 
         # 对F1_score进行排序时用到的阈值
         self.threshold = threshold
 
+        self.profile_video_dir = Context.get_file_path('extract_cut_car')
+
+        self.profile_video_point = 0
+        self.profile_video_num = len(os.listdir(self.profile_video_dir))
+
+        # TODO: accuracy
+        self.gt_file_path = Context.get_file_path('gt_file.txt')
+        self.hash_file_path = Context.get_file_path('hash_file.ann')
+        self.acc_estimator = AccEstimator(self.hash_file_path, self.gt_file_path)
+
+    def get_all_knob_combinations(self):
+        all_config_list = []
+        for resolution in self.resolution_list:
+            for fps in self.fps_list:
+                all_config_list.append({'resolution': resolution, 'fps': fps})
+        return all_config_list
+
+    # 用途：每一个大周期开始时，执行此函数，更新最优的best_num个配置
+    # 注意: 该函数执行时间不能超过calculate_time
+    def update_best_config_list_for_window(self):
+        # 待填充列表，用于存储self.all_config_list中每一种配置组合的得分
+        target_config_list = []
+
+        # 为了比较各种配置旋钮的优劣，需要将其和黄金配置下的效果相比较
+        # 由于配置空间很大，为每一种配置都重新根据raw_video计算F1十分困难，而且会导致性能严重下降, 所以采用了一个偷懒的方法
+        # 即，为每一种配置的每一种取值打分；对于一种配置组合，将配置组合中每一个配置值对应的得分相乘，作为这个配置组合的得分，也就是config_score
+        # 比如，给reso={360p, 480p, 720p} 分别打分0.8 0.9 0.95，给fps={10, 20,30}分别打分0.6 0.7 0.8，从而(360p, 10fps)的得分就是0.8*0.6=0.48
+        # 这样一来就不用对配置空间中的每一种配置组合都分别计算F1分数，也可以间接比较不同配置的优劣了。
+
+        # 具体的，如何为每一种配置的取值打分呢？
+        # 答案是用这种取值代替黄金配置golden_config中的相应配置得到new_config，
+        # 然后计算new_config在当前raw_video下ground_truth的F1 score
+        # 由于new_config是基于黄金配置修改得到的，性能表现不会很差
+        # 假设黄金配置是(720p, 30)，那么360p的得分就是(360p, 30)在raw_video下实际运行后与groud_truth相比得到的F1_score
+        # 从而配置空间中某个普通配置(360p, 10)的配置得分就是(360p, 30)的F1分数与(720p, 10)的F1分数的乘积
+        each_knob_score = {}  # 存储每一种配置的每一种取值的得分
+        for knob in self.schedule_knobs:
+            for value in self.schedule_knobs[knob]:
+                new_config = self.golden_config
+                new_config.update({knob: value})
+                score = self.get_f1_score(new_config)
+                each_knob_score[value] = score
+
+        # 计算每一种配置组合的得分config_score
+        for config in self.all_config_list:
+            target_config_list.append((config, self.calculate_config_score(config, each_knob_score)))
+
+        # 根据score为所有配置进行排序, 排序的时候过滤掉得分小于等于阈值的, 最后根据排序结果取最优的best_num个。
+        # target_config_list中的每一个元素都是二元组，分别是配置以及得分
+        target_config_list = [x for x in sorted(target_config_list, key=lambda x: x[1], reverse=True) if
+                              x[1] > self.threshold][:self.best_num]
+
+        # 提取 target_config_list中的配置，忽略配置的得分
+        self.best_config_list = [x[0] for x in target_config_list]
+
+    # 用途：从一个大周期的第二个segment开始，执行此函数，从已有的best_num个配置里选择一个最优的
+    # 注意: 该函数执行时间不能超过calculate_time
     def update_best_config_list_for_segment(self):
 
         target_config_list = []
@@ -52,8 +137,8 @@ class ChameleonAgent(BaseAgent, abc.ABC):
         for knob in self.schedule_knobs:
             for value in self.schedule_knobs[knob]:
                 new_config = self.golden_config
-                new_config.update((knob, value))
-                score = self.get_F1_score(new_config)
+                new_config.update({knob: value})
+                score = self.get_f1_score(new_config)
                 each_knob_score[value] = score
 
         # 为已有的best_num个配置打分
@@ -68,39 +153,141 @@ class ChameleonAgent(BaseAgent, abc.ABC):
 
         # 为每一个配置计算分数，用于给配置排序
 
-    def calculate_config_score(self, config, knob_value):
+    @staticmethod
+    def calculate_config_score(config, knob_value):
         res = 1
         # 遍历旋钮值
-        for value in config:
+        for value in config.values():
             res *= knob_value[value]
         return res
 
+    # 使用raw_data, 计算target_config相对于groud_truth的F1得分
+    # 一般需要实际运行
+    def get_f1_score(self, target_config):
+        try:
+            resolution = target_config['resolution']
+            fps = target_config['fps']
+            raw_resolution = VideoOps.text2resolution('1080p')
+            resolution = VideoOps.text2resolution(resolution)
+            resolution_ratio = (resolution[0] / raw_resolution[0], resolution[1] / raw_resolution[1])
+            frames = self.process_video(resolution, fps)
+            hash_data = [HashOps.get_frame_hash(frame).hash.flatten() for frame in frames]
+            results = self.execute_analytics(frames)
+            acc = self.acc_estimator.calculate_accuracy(hash_data, results, resolution_ratio, fps / 30)
+        except Exception as e:
+            LOGGER.warning(f'Calculate accuracy failed: {str(e)}')
+            acc = 0
+        return acc
+
+    def process_video(self, resolution, fps):
+        raw_fps = 30
+        fps = min(fps, raw_fps)
+        fps_mode, skip_frame_interval, remain_frame_interval = self.get_fps_adjust_mode(raw_fps, fps)
+
+        frame_count = 0
+        frame_list = []
+        frames = self.raw_frames.get_all()
+        for frame in frames:
+            frame_count += 1
+            if fps_mode == 'skip' and frame_count % skip_frame_interval == 0:
+                continue
+
+            if fps_mode == 'remain' and frame_count % remain_frame_interval != 0:
+                continue
+            frame = cv2.resize(frame, resolution)
+            frame_list.append(frame)
+
+        return frame_list
+
+    def execute_analytics(self, frames):
+
+        cur_path = self.compress_video(frames)
+
+        processor_port = PortInfo.get_service_port(self.current_analytics)
+        processor_address = get_merge_address(NodeInfo.hostname2ip(self.processor_hostname),
+                                              port=processor_port,
+                                              path=NetworkAPIPath.PROCESSOR_PROCESS_RETURN)
+        tmp_task = Task(source_id=0, task_id=0, source_device='')
+        tmp_task.set_file_path(cur_path)
+        response = http_request(url=processor_address,
+                                method=NetworkAPIMethod.PROCESSOR_PROCESS_RETURN,
+                                data={'data': Task.serialize(tmp_task)},
+                                files={'file': (tmp_task.get_file_path(),
+                                                open(tmp_task.get_file_path(), 'rb'),
+                                                'multipart/form-data')}
+                                )
+        FileOps.remove_data_file(tmp_task)
+        if response:
+            task = Task.deserialize(response)
+            return task.get_content()
+        return None
+
+    @staticmethod
+    def get_fps_adjust_mode(fps_raw, fps):
+        skip_frame_interval = 0
+        remain_frame_interval = 0
+        if fps >= fps_raw:
+            fps_mode = 'same'
+        elif fps < fps_raw // 2:
+            fps_mode = 'remain'
+            remain_frame_interval = fps_raw // fps
+        else:
+            fps_mode = 'skip'
+            skip_frame_interval = fps_raw // (fps_raw - fps)
+
+        return fps_mode, skip_frame_interval, remain_frame_interval
+
+    @staticmethod
+    def compress_video(frames):
+        fourcc = cv2.VideoWriter_fourcc('mp4v')
+        height, width, _ = frames[0].shape
+        video_path = f'temp_{int(time.time())}.mp4'
+        out = cv2.VideoWriter(video_path, fourcc, 30, (width, height))
+        for frame in frames:
+            out.write(frame)
+        out.release()
+
+        return video_path
+
     def get_schedule_plan(self, info):
-        if self.fixed_policy is None:
-            return self.fixed_policy
+
+        frame_encoded = info['frame']
+        if frame_encoded:
+            self.raw_frames.put(EncodeOps.decode_image(frame_encoded))
+
+        if not self.best_config_list:
+            LOGGER.info('[No best config list] the length of best_config_list is 0!')
+            return None
 
         policy = self.fixed_policy.copy()
         edge_device = info['device']
         cloud_device = self.cloud_device
         pipe_seg = policy['pipeline']
         pipeline = info['pipeline']
+        self.current_analytics = pipeline[0]['service_name']
         pipeline = [{**p, 'execute_device': edge_device} for p in pipeline[:pipe_seg]] + \
                    [{**p, 'execute_device': cloud_device} for p in pipeline[pipe_seg:]]
-
         policy.update({'pipeline': pipeline})
+
+        best_config = self.best_config_list[0]
+
+        policy.update(best_config)
         return policy
 
     def run(self):
+        # wait for video data
+        while self.raw_frames.empty() or not self.current_analytics:
+            time.sleep(1)
+
+        LOGGER.info('[Chameleon Agent] Chameleon Agent Started')
         segment_num = 0  # 判断当前是第几个大周期里的第几个小周期了
 
-        while True:
+        time.sleep(self.segment_size)
 
-            time.sleep(self.segment_size)
+        while True:
+            start_time = time.time()
+
             segment_num += 1
-            # 获取视频帧
-            self.raw_video = self.get_raw_video()
-            # 计算groud_truth用于后续计算F1_score
-            self.get_ground_truth()
 
             # 冷启动时， 为初始化的best_num个配置排序
             if segment_num == 1:
@@ -114,11 +301,20 @@ class ChameleonAgent(BaseAgent, abc.ABC):
             else:
                 self.update_best_config_list_for_segment()
 
-            # 获取新排序的配置中最优的配置
-            self.schedule_plan = self.best_config_list[0]
+            end_time = time.time()
+            time_cost = end_time - start_time
+            LOGGER.info(f'[Chameleon Profile] Profile for time: {time_cost}s')
+            LOGGER.info(f'[Config List] Best Config List: {self.best_config_list}')
+            if self.segment_size > time_cost:
+                time.sleep(self.segment_size - time_cost)
 
     def get_default_profile(self):
-        return []
+        # extract from offline experiment
+        return [{'resolution': '1080p', 'fps': 30},
+                {'resolution': '1080p', 'fps': 10},
+                {'resolution': '900p', 'fps': 30},
+                {'resolution': '900p', 'fps': 10},
+                {'resolution': '720p', 'fps': 30}]
 
     def update_scenario(self, scenario):
         pass

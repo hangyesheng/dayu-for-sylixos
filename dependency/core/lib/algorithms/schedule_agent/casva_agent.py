@@ -1,6 +1,5 @@
 import abc
 import os.path
-import threading
 import time
 import numpy as np
 
@@ -12,21 +11,33 @@ from .base_agent import BaseAgent
 
 __all__ = ('CASVAAgent',)
 
+"""
+CASVA Agent Class
+
+Implementation of CASVA
+
+Zhang M, Wang F, Liu J. Casva: Configuration-adaptive streaming for live video analytics[C]//IEEE INFOCOM 2022-IEEE Conference on Computer Communications. IEEE, 2022: 2168-2177.
+"""
 
 @ClassFactory.register(ClassType.SCH_AGENT, alias='casva')
 class CASVAAgent(BaseAgent, abc.ABC):
 
     def __init__(self, system,
                  agent_id: int,
-                 window_size: int = 10,
-                 mode: str = 'inference'):
-        from .casva import SoftActorCritic, RandomBuffer, Adapter, StateBuffer
+                 window_size: int = 8,
+                 mode: str = 'inference',
+                 streaming_mode: str = 'latency_first'):
+        from .casva import DualClippedPPO, RandomBuffer, Adapter, StateBuffer
+
+        assert streaming_mode in ['latency_first', 'delivery_first'], \
+            '"streaming_mode" must be "latency_first" or "delivery_first"'
 
         self.agent_id = agent_id
         self.system = system
 
         self.fps_list = system.fps_list
         self.resolution_list = system.resolution_list
+        self.qp_list = system.qp_list
 
         drl_params = system.drl_params.copy()
         hyper_params = system.hyper_params.copy()
@@ -35,8 +46,9 @@ class CASVAAgent(BaseAgent, abc.ABC):
         self.window_size = window_size
         self.state_buffer = StateBuffer(self.window_size)
         self.mode = mode
+        self.streaming_mode = streaming_mode
 
-        self.drl_agent = SoftActorCritic(**drl_params)
+        self.drl_agent = DualClippedPPO(**drl_params)
         self.replay_buffer = RandomBuffer(**drl_params)
         self.adapter = Adapter
 
@@ -45,10 +57,7 @@ class CASVAAgent(BaseAgent, abc.ABC):
         self.state_dim = drl_params['state_dims']
         self.action_dim = drl_params['action_dim']
 
-        self.gt_file_path = Context.get_file_path('gt_file.txt')
-        self.hash_file_path = Context.get_file_path('hash_file.ann')
-        self.acc_estimator = AccEstimator(self.hash_file_path, self.gt_file_path)
-
+        # TODO: load model
         self.model_dir = Context.get_file_path(os.path.join(hyper_params['model_dir'], f'agent_{self.agent_id}'))
         FileOps.create_directory(self.model_dir)
 
@@ -119,9 +128,16 @@ class CASVAAgent(BaseAgent, abc.ABC):
 
         return state, reward, done, info
 
+    # TODO: reward
     def calculate_drl_reward(self, evaluation_info):
+        if self.streaming_mode == 'latency_first':
+            pass
+        elif self.streaming_mode == 'delivery_first':
+            pass
+        else:
+            raise ValueError('"streaming_mode" must be "latency_first" or "delivery_first"')
+
         delay_bias_list = []
-        acc_list = []
 
         for task in evaluation_info:
             delay = task.calculate_total_time()
@@ -137,15 +153,12 @@ class CASVAAgent(BaseAgent, abc.ABC):
 
             fps_ratio = meta_data['fps'] / raw_metadata['fps']
 
-            acc = self.acc_estimator.calculate_accuracy(hash_data, content, resolution_ratio, fps_ratio)
-            acc_list.append(acc)
 
             single_task_delay = delay / meta_data['buffer_size']
             single_task_constraint = 1 / meta_data['fps']
             delay_bias_list.append(single_task_constraint * 1.6 - single_task_delay)
 
         final_delay = np.mean(delay_bias_list)
-        final_acc = np.mean(acc_list)
         LOGGER.info(f'[Reward Computing] delay:{final_delay} acc:{final_acc}')
 
         if final_delay < 0:

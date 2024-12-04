@@ -3,12 +3,12 @@ import numpy as np
 import os
 import time
 from core.lib.content import Task
-from core.lib.common import LOGGER, Context, YamlOps, FileOps, Counter, SystemConstant
+from core.lib.common import LOGGER, Context, YamlOps, FileOps, Counter, SystemConstant, EncodeOps
 from core.lib.network import http_request, NodeInfo, PortInfo, get_merge_address, NetworkAPIPath, NetworkAPIMethod
 
 from kube_helper import KubeHelper
 from template_helper import TemplateHelper
-from utils import get_first_frame_from_video, encode_image, draw_bboxes
+from utils import get_first_frame_from_video, draw_bboxes
 
 
 class BackendCore:
@@ -224,7 +224,7 @@ class BackendCore:
                     image = get_first_frame_from_video(file_path)
                     image = draw_bboxes(image, content[0][0])
 
-                    base64_data = encode_image(image)
+                    base64_data = EncodeOps.encode_image(image)
                 except Exception as e:
                     base64_data = bytes('', encoding='utf8')
                     LOGGER.warning(f'Video visualization fetch failed: {str(e)}')

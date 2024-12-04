@@ -10,8 +10,6 @@ from core.lib.common import LOGGER, FileOps
 from core.lib.network import NodeInfo, PortInfo, http_request, get_merge_address, NetworkAPIMethod, NetworkAPIPath
 from core.lib.content import Task
 
-from .processor import Processor
-
 
 class ProcessorServer:
     def __init__(self):
@@ -21,6 +19,11 @@ class ProcessorServer:
                      response_class=JSONResponse,
                      methods=[NetworkAPIMethod.PROCESSOR_PROCESS]
                      ),
+            APIRoute(NetworkAPIPath.PROCESSOR_PROCESS_RETURN,
+                     self.process_return_service,
+                     response_class=JSONResponse,
+                     methods=[NetworkAPIMethod.PROCESSOR_PROCESS_RETURN]
+                     )
         ], log_level='trace', timeout=6000)
 
         self.app.add_middleware(
@@ -55,6 +58,22 @@ class ProcessorServer:
         LOGGER.debug(f'[Task Queue] Queue Size (receive request): {self.task_queue.size()}')
         LOGGER.debug(f'[Monitor Task] (Process Request Background) '
                      f'Source: {cur_task.get_source_id()} / Task: {cur_task.get_task_id()} ')
+
+    async def process_return_service(self, backtask: BackgroundTasks, file: UploadFile = File(...),
+                                     data: str = Form(...)):
+        file_data = await file.read()
+        cur_task = Task.deserialize(data)
+        backtask.add_task(self.process_return_service_background, data, file_data)
+        LOGGER.debug(f'[Monitor Task] (Process Return Request) '
+                     f'Source: {cur_task.get_source_id()} / Task: {cur_task.get_task_id()} ')
+
+    def process_return_service_background(self, data, file_data):
+        cur_task = Task.deserialize(data)
+        FileOps.save_data_file(cur_task, file_data)
+        new_task = self.processor(cur_task)
+        FileOps.remove_data_file(cur_task)
+        if new_task:
+            return Task.serialize(new_task)
 
     def loop_process(self):
         LOGGER.info('Start processing loop..')
