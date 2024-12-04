@@ -6,7 +6,7 @@ import numpy as np
 
 from core.lib.common import ClassFactory, ClassType, LOGGER, FileOps, Context
 from core.lib.estimation import AccEstimator
-from core.lib.common import VideoOps
+from core.lib.common import VideoOps, FileNameConstant
 
 from .base_agent import BaseAgent
 
@@ -45,9 +45,7 @@ class HEIAgent(BaseAgent, abc.ABC):
         self.state_dim = drl_params['state_dims']
         self.action_dim = drl_params['action_dim']
 
-        self.gt_file_path = Context.get_file_path('gt_file.txt')
-        self.hash_file_path = Context.get_file_path('hash_file.ann')
-        self.acc_estimator = AccEstimator(self.hash_file_path, self.gt_file_path)
+        self.acc_estimator = None
 
         self.model_dir = Context.get_file_path(os.path.join(hyper_params['model_dir'], f'agent_{self.agent_id}'))
         FileOps.create_directory(self.model_dir)
@@ -105,6 +103,12 @@ class HEIAgent(BaseAgent, abc.ABC):
 
         return state, reward, done, info
 
+    def create_acc_estimator(self, service_name: str):
+        gt_path_prefix = os.path.join(FileNameConstant.ACC_GT_DIR.value, service_name)
+        gt_file_path = Context.get_file_path(os.path.join(gt_path_prefix, 'gt_file.txt'))
+        hash_file_path = Context.get_file_path(os.path.join(gt_path_prefix, 'hash_file.ann'))
+        self.acc_estimator = AccEstimator(hash_file_path, gt_file_path)
+
     def calculate_drl_reward(self, evaluation_info):
         delay_bias_list = []
         acc_list = []
@@ -114,6 +118,7 @@ class HEIAgent(BaseAgent, abc.ABC):
             meta_data = task.get_metadata()
             raw_metadata = task.get_raw_metadata()
             content = task.get_content()
+            pipeline = task.get_pipeline()
 
             hash_data = task.get_hash_data()
 
@@ -123,6 +128,8 @@ class HEIAgent(BaseAgent, abc.ABC):
 
             fps_ratio = meta_data['fps'] / raw_metadata['fps']
 
+            if not self.acc_estimator:
+                self.create_acc_estimator(service_name=pipeline[0]['service_name'])
             acc = self.acc_estimator.calculate_accuracy(hash_data, content, resolution_ratio, fps_ratio)
             acc_list.append(acc)
 

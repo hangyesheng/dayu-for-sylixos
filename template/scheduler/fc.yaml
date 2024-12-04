@@ -20,4 +20,4 @@ port-open:
   port: 9000
 file-mount:
   - pos: cloud
-    path: 'scheduler/fc'
+    path: 'scheduler/fc/'

@@ -20,4 +20,6 @@ port-open:
   port: 9000
 file-mount:
   - pos: cloud
-    path: 'scheduler/chameleon'
+    path: 'scheduler/chameleon/'
+  - pos: cloud
+    path: 'acc-gt/'

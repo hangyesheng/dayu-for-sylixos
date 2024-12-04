@@ -2,7 +2,7 @@ import abc
 import os
 
 from core.lib.common import ClassFactory, ClassType, Context, LOGGER, EncodeOps
-from core.lib.common import VideoOps, HashOps
+from core.lib.common import VideoOps, HashOps, FileNameConstant
 from core.lib.estimation import AccEstimator
 from core.lib.common import Queue, FileOps
 from core.lib.network import NodeInfo, get_merge_address, NetworkAPIPath, NetworkAPIMethod, PortInfo, http_request
@@ -43,7 +43,7 @@ class ChameleonAgent(BaseAgent, abc.ABC):
         self.schedule_knobs = {'resolution': self.resolution_list,
                                'fps': self.fps_list}
 
-        self.processor_hostname = NodeInfo.get_cloud_node()
+        self.processor_address = None
 
         # 大周期、小周期(段)、计算best_num个配置所允许的最大耗时
         # 一个大周期里包含 profile_window / segment_size个段
@@ -78,10 +78,7 @@ class ChameleonAgent(BaseAgent, abc.ABC):
         self.profile_video_point = 0
         self.profile_video_num = len(os.listdir(self.profile_video_dir))
 
-        # TODO: accuracy
-        self.gt_file_path = Context.get_file_path('gt_file.txt')
-        self.hash_file_path = Context.get_file_path('hash_file.ann')
-        self.acc_estimator = AccEstimator(self.hash_file_path, self.gt_file_path)
+        self.acc_estimator = None
 
     def get_all_knob_combinations(self):
         all_config_list = []
@@ -173,11 +170,21 @@ class ChameleonAgent(BaseAgent, abc.ABC):
             frames = self.process_video(resolution, fps)
             hash_data = [HashOps.get_frame_hash(frame).hash.flatten() for frame in frames]
             results = self.execute_analytics(frames)
+            if not self.acc_estimator:
+                self.create_acc_estimator()
             acc = self.acc_estimator.calculate_accuracy(hash_data, results, resolution_ratio, fps / 30)
         except Exception as e:
             LOGGER.warning(f'Calculate accuracy failed: {str(e)}')
             acc = 0
         return acc
+
+    def create_acc_estimator(self):
+        if not self.current_analytics:
+            raise ValueError('No value of "current_analytics" has been set')
+        gt_path_prefix = os.path.join(FileNameConstant.ACC_GT_DIR.value, self.current_analytics)
+        gt_file_path = Context.get_file_path(os.path.join(gt_path_prefix, 'gt_file.txt'))
+        hash_file_path = Context.get_file_path(os.path.join(gt_path_prefix, 'hash_file.ann'))
+        self.acc_estimator = AccEstimator(hash_file_path, gt_file_path)
 
     def process_video(self, resolution, fps):
         raw_fps = 30
@@ -200,16 +207,18 @@ class ChameleonAgent(BaseAgent, abc.ABC):
         return frame_list
 
     def execute_analytics(self, frames):
+        if not self.processor_address:
+            processor_hostname = NodeInfo.get_cloud_node()
+            processor_port = PortInfo.get_service_port(self.current_analytics)
+            self.processor_address = get_merge_address(NodeInfo.hostname2ip(processor_hostname),
+                                                       port=processor_port,
+                                                       path=NetworkAPIPath.PROCESSOR_PROCESS_RETURN)
 
         cur_path = self.compress_video(frames)
 
-        processor_port = PortInfo.get_service_port(self.current_analytics)
-        processor_address = get_merge_address(NodeInfo.hostname2ip(self.processor_hostname),
-                                              port=processor_port,
-                                              path=NetworkAPIPath.PROCESSOR_PROCESS_RETURN)
         tmp_task = Task(source_id=0, task_id=0, source_device='')
         tmp_task.set_file_path(cur_path)
-        response = http_request(url=processor_address,
+        response = http_request(url=self.processor_address,
                                 method=NetworkAPIMethod.PROCESSOR_PROCESS_RETURN,
                                 data={'data': Task.serialize(tmp_task)},
                                 files={'file': (tmp_task.get_file_path(),
