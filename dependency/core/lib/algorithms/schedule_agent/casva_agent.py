@@ -15,6 +15,8 @@ CASVA Agent Class
 
 Implementation of CASVA
 
+In this implementation , for the sake of uniformity, we also set buffer size in state as a sequence not a single value.
+
 Zhang M, Wang F, Liu J. Casva: Configuration-adaptive streaming for live video analytics[C]//IEEE INFOCOM 2022-IEEE Conference on Computer Communications. IEEE, 2022: 2168-2177.
 """
 
@@ -27,6 +29,7 @@ class CASVAAgent(BaseAgent, abc.ABC):
                  window_size: int = 8,
                  mode: str = 'inference',
                  streaming_mode: str = 'latency_first',
+                 segment_length: int = 2,
                  model_dir: str = 'model',
                  load_model: bool = False,
                  load_model_episode: int = 0):
@@ -37,6 +40,9 @@ class CASVAAgent(BaseAgent, abc.ABC):
 
         self.agent_id = agent_id
         self.system = system
+
+        self.cloud_device = system.cloud_device
+        self.edge_device = None
 
         self.fps_list = system.fps_list
         self.resolution_list = system.resolution_list
@@ -50,6 +56,7 @@ class CASVAAgent(BaseAgent, abc.ABC):
         self.state_buffer = StateBuffer(self.window_size)
         self.mode = mode
         self.streaming_mode = streaming_mode
+        self.segment_length = segment_length
 
         self.drl_agent = DualClippedPPO(**drl_params)
         self.replay_buffer = RandomBuffer(**drl_params)
@@ -93,15 +100,20 @@ class CASVAAgent(BaseAgent, abc.ABC):
             LOGGER.info(f'[CASVA Lack Latest Policy] (agent {self.agent_id}) No latest policy, none decision make ..')
             return
 
+        self.edge_device = self.latest_policy['edge_device']
         resolution_index = int((action[0] + 1) / 2 * len(self.resolution_list))
         fps_index = int((action[1] + 1) / 2 * len(self.fps_list))
+        qp_index = int((action[2] + 1) / 2 * len(self.qp_list))
         self.latest_policy.update({'resolution': self.resolution_list[resolution_index],
-                                   'fps': self.fps_list[fps_index]})
+                                   'fps': self.fps_list[fps_index],
+                                   'qp': self.qp_list[qp_index],
+                                   'buffer_size': self.fps_list[fps_index] * self.segment_length
+                                   })
 
         pipe_seg = 0
         pipeline = self.latest_policy['pipeline']
-        pipeline = [{**p, 'execute_device': 'edge1'} for p in pipeline[:pipe_seg]] + \
-                   [{**p, 'execute_device': 'cloud.kubeedge'} for p in pipeline[pipe_seg:]]
+        pipeline = [{**p, 'execute_device': self.edge_device} for p in pipeline[:pipe_seg]] + \
+                   [{**p, 'execute_device': self.cloud_device} for p in pipeline[pipe_seg:]]
         self.latest_policy.update({'pipeline': pipeline})
         self.schedule_plan = self.latest_policy.copy()
 
@@ -218,7 +230,7 @@ class CASVAAgent(BaseAgent, abc.ABC):
 
             self.state_buffer.add_scenario_buffer([object_number, object_size, task_delay])
         except Exception as e:
-            LOGGER.warning('Wrong scenario from Distributor!')
+            LOGGER.warning(f'Wrong scenario from Distributor: {str(e)}')
 
     def update_resource(self, device, resource):
         bandwidth = resource['bandwidth']

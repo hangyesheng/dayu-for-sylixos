@@ -14,4 +14,4 @@ pod-template:
     - name: GEN_BSTO_NAME
       value: simple
     - name: GEN_ASO_NAME
-      value: simple
+      value: casva

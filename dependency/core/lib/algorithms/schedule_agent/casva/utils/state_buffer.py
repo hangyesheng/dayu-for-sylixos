@@ -2,6 +2,7 @@ import numpy as np
 from core.lib.common import LOGGER
 
 
+# TODO: add parameters
 class StateBuffer:
     def __init__(self, window_size):
         self.resources = []

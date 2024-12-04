@@ -1,12 +1,11 @@
 import abc
 import os.path
-import threading
 import time
 import numpy as np
 
 from core.lib.common import ClassFactory, ClassType, LOGGER, FileOps, Context
 from core.lib.estimation import AccEstimator
-from core.lib.common import VideoOps
+from core.lib.common import VideoOps, FileNameConstant
 
 from .base_agent import BaseAgent
 
@@ -19,7 +18,10 @@ class HEIDRLAgent(BaseAgent, abc.ABC):
     def __init__(self, system,
                  agent_id: int,
                  window_size: int = 10,
-                 mode: str = 'inference'):
+                 mode: str = 'inference',
+                 model_dir: str = 'model',
+                 load_model: bool = False,
+                 load_model_episode: int = 0):
         from .hei import SoftActorCritic, RandomBuffer, Adapter, StateBuffer
 
         self.agent_id = agent_id
@@ -40,7 +42,7 @@ class HEIDRLAgent(BaseAgent, abc.ABC):
         self.fps_list = system.fps_list
         self.resolution_list = system.resolution_list
         self.buffer_size_list = system.buffer_size_list
-        self.partition_point = [0,1,2]
+        self.partition_point = [0, 1, 2]
 
         self.drl_schedule_interval = hyper_params['drl_schedule_interval']
         self.nf_schedule_interval = hyper_params['nf_schedule_interval']
@@ -48,16 +50,12 @@ class HEIDRLAgent(BaseAgent, abc.ABC):
         self.state_dim = drl_params['state_dims']
         self.action_dim = drl_params['action_dim']
 
-        self.gt_file_path = Context.get_file_path('gt_file.txt')
-        self.hash_file_path = Context.get_file_path('hash_file.ann')
-        self.acc_estimator = AccEstimator(self.hash_file_path, self.gt_file_path)
+        self.acc_estimator = None
 
-        self.model_dir = Context.get_file_path(os.path.join(hyper_params['model_dir'], f'agent_{self.agent_id}'))
+        self.model_dir = Context.get_file_path(os.path.join('scheduler/hei', model_dir, f'agent_{self.agent_id}'))
         FileOps.create_directory(self.model_dir)
-
-        if hyper_params['load_model']:
-            self.premodel_dir = Context.get_file_path('')
-            self.drl_agent.load(self.premodel_dir, hyper_params['load_model_episode'])
+        if load_model:
+            self.drl_agent.load(self.model_dir, load_model_episode)
 
         self.total_steps = hyper_params['drl_total_steps']
         self.save_interval = hyper_params['drl_save_interval']
@@ -99,7 +97,7 @@ class HEIDRLAgent(BaseAgent, abc.ABC):
 
         self.latest_policy.update({'resolution': self.resolution_list[resolution_index],
                                    'fps': self.fps_list[fps_index],
-                                   'buffer_size': self.buffer_size_list[buffer_size],})
+                                   'buffer_size': self.buffer_size_list[buffer_size], })
 
         pipeline = self.latest_policy['pipeline']
         pipeline = [{**p, 'execute_device': 'edge1'} for p in pipeline[:pipe_seg]] + \
@@ -130,6 +128,12 @@ class HEIDRLAgent(BaseAgent, abc.ABC):
 
         return state, reward, done, info
 
+    def create_acc_estimator(self, service_name: str):
+        gt_path_prefix = os.path.join(FileNameConstant.ACC_GT_DIR.value, service_name)
+        gt_file_path = Context.get_file_path(os.path.join(gt_path_prefix, 'gt_file.txt'))
+        hash_file_path = Context.get_file_path(os.path.join(gt_path_prefix, 'hash_file.ann'))
+        self.acc_estimator = AccEstimator(hash_file_path, gt_file_path)
+
     def calculate_drl_reward(self, evaluation_info):
         delay_bias_list = []
         acc_list = []
@@ -139,6 +143,7 @@ class HEIDRLAgent(BaseAgent, abc.ABC):
             meta_data = task.get_metadata()
             raw_metadata = task.get_raw_metadata()
             content = task.get_content()
+            pipeline = task.get_pipeline()
 
             hash_data = task.get_hash_data()
 
@@ -148,6 +153,8 @@ class HEIDRLAgent(BaseAgent, abc.ABC):
 
             fps_ratio = meta_data['fps'] / raw_metadata['fps']
 
+            if not self.acc_estimator:
+                self.create_acc_estimator(service_name=pipeline[0]['service_name'])
             acc = self.acc_estimator.calculate_accuracy(hash_data, content, resolution_ratio, fps_ratio)
             acc_list.append(acc)
 
@@ -217,7 +224,7 @@ class HEIDRLAgent(BaseAgent, abc.ABC):
 
             self.state_buffer.add_scenario_buffer([object_number, object_size, task_delay])
         except Exception as e:
-            LOGGER.warning('Wrong scenario from Distributor!')
+            LOGGER.warning(f'Wrong scenario from Distributor: {str(e)}')
 
     def update_resource(self, device, resource):
         bandwidth = resource['bandwidth']

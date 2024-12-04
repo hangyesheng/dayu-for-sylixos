@@ -209,7 +209,7 @@ class HEIAgent(BaseAgent, abc.ABC):
 
             self.state_buffer.add_scenario_buffer([object_number, object_size, task_delay])
         except Exception as e:
-            LOGGER.warning('Wrong scenario from Distributor!')
+            LOGGER.warning(f'Wrong scenario from Distributor: {str(e)}')
 
     def update_resource(self, device, resource):
         bandwidth = resource['bandwidth']

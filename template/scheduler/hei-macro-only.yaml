@@ -14,7 +14,7 @@ pod-template:
     - name: SCH_POLICY_NAME
       value: simple
     - name: SCH_AGENT_NAME
-      value: hei
+      value: hei_drl
     - name: SCH_AGENT_PARAMETERS
       value: "{'window_size':8, 'mode':'train', 'model_dir':'model', 'load_model':False, 'load_model_episode':0}"
 port-open:

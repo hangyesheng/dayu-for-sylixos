@@ -17,9 +17,10 @@ class DualClippedPPO(object):
             action_dim,
             gamma=0.99,
             hid_shape=(256, 256),
-            conv_kernel_size=(3, 3),
-            conv_hid_channels=(16, 64),
-            conv_state_features=64,
+            conv_kernel_size=(4, 4),
+            conv_kernel_size_special=(1, 1),
+            conv_hid_channels=(128,),
+            conv_state_features=128,
             a_lr=1e-4,
             c_lr=1e-4,
             tau=0.005,
@@ -31,12 +32,12 @@ class DualClippedPPO(object):
     ):
         # Initialize Actor and Critic networks
         self.actor = Actor(state_dims, action_dim, hid_shape,
-                           conv_hid_channels, conv_kernel_size,
+                           conv_hid_channels, conv_kernel_size,conv_kernel_size_special,
                            conv_state_features).to(device)
         self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=a_lr)
 
         self.critic = Critic(state_dims, action_dim, hid_shape,
-                             conv_hid_channels, conv_kernel_size,
+                             conv_hid_channels, conv_kernel_size,conv_kernel_size_special,
                              conv_state_features).to(device)
         self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=c_lr)
 
