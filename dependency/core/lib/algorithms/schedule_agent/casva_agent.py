@@ -4,7 +4,6 @@ import time
 import numpy as np
 
 from core.lib.common import ClassFactory, ClassType, LOGGER, FileOps, Context
-from core.lib.estimation import AccEstimator
 from core.lib.common import VideoOps
 
 from .base_agent import BaseAgent
@@ -19,6 +18,7 @@ Implementation of CASVA
 Zhang M, Wang F, Liu J. Casva: Configuration-adaptive streaming for live video analytics[C]//IEEE INFOCOM 2022-IEEE Conference on Computer Communications. IEEE, 2022: 2168-2177.
 """
 
+
 @ClassFactory.register(ClassType.SCH_AGENT, alias='casva')
 class CASVAAgent(BaseAgent, abc.ABC):
 
@@ -26,7 +26,10 @@ class CASVAAgent(BaseAgent, abc.ABC):
                  agent_id: int,
                  window_size: int = 8,
                  mode: str = 'inference',
-                 streaming_mode: str = 'latency_first'):
+                 streaming_mode: str = 'latency_first',
+                 model_dir: str = 'model',
+                 load_model: bool = False,
+                 load_model_episode: int = 0):
         from .casva import DualClippedPPO, RandomBuffer, Adapter, StateBuffer
 
         assert streaming_mode in ['latency_first', 'delivery_first'], \
@@ -57,13 +60,10 @@ class CASVAAgent(BaseAgent, abc.ABC):
         self.state_dim = drl_params['state_dims']
         self.action_dim = drl_params['action_dim']
 
-        # TODO: load model
-        self.model_dir = Context.get_file_path(os.path.join(hyper_params['model_dir'], f'agent_{self.agent_id}'))
+        self.model_dir = Context.get_file_path(os.path.join('scheduler/hei', model_dir, f'agent_{self.agent_id}'))
         FileOps.create_directory(self.model_dir)
-
-        if hyper_params['load_model']:
-            self.premodel_dir = Context.get_file_path('')
-            self.drl_agent.load(self.premodel_dir, hyper_params['load_model_episode'])
+        if load_model:
+            self.drl_agent.load(self.model_dir, load_model_episode)
 
         self.total_steps = hyper_params['drl_total_steps']
         self.save_interval = hyper_params['drl_save_interval']
@@ -152,7 +152,6 @@ class CASVAAgent(BaseAgent, abc.ABC):
             resolution_ratio = (resolution[0] / raw_resolution[0], resolution[1] / raw_resolution[1])
 
             fps_ratio = meta_data['fps'] / raw_metadata['fps']
-
 
             single_task_delay = delay / meta_data['buffer_size']
             single_task_constraint = 1 / meta_data['fps']

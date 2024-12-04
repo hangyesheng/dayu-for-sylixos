@@ -1,0 +1,17 @@
+position: edge
+pod-template:
+  image: generator
+  imagePullPolicy: IfNotPresent
+  env:
+    - name: GEN_FILTER_NAME
+      value: simple
+    - name: GEN_PROCESS_NAME
+      value: simple
+    - name: GEN_COMPRESS_NAME
+      value: casva
+    - name: GEN_BSO_NAME
+      value: chameleon
+    - name: GEN_BSTO_NAME
+      value: simple
+    - name: GEN_ASO_NAME
+      value: simple

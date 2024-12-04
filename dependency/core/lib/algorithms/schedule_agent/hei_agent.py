@@ -19,7 +19,10 @@ class HEIAgent(BaseAgent, abc.ABC):
     def __init__(self, system,
                  agent_id: int,
                  window_size: int = 10,
-                 mode: str = 'inference'):
+                 mode: str = 'inference',
+                 model_dir: str = 'model',
+                 load_model: bool = False,
+                 load_model_episode: int = 0):
         from .hei import SoftActorCritic, RandomBuffer, Adapter, NegativeFeedback, StateBuffer
 
         self.agent_id = agent_id
@@ -47,12 +50,10 @@ class HEIAgent(BaseAgent, abc.ABC):
 
         self.acc_estimator = None
 
-        self.model_dir = Context.get_file_path(os.path.join(hyper_params['model_dir'], f'agent_{self.agent_id}'))
+        self.model_dir = Context.get_file_path(os.path.join('scheduler/hei', model_dir, f'agent_{self.agent_id}'))
         FileOps.create_directory(self.model_dir)
-
-        if hyper_params['load_model']:
-            self.premodel_dir = Context.get_file_path('')
-            self.drl_agent.load(self.premodel_dir, hyper_params['load_model_episode'])
+        if load_model:
+            self.drl_agent.load(self.model_dir, load_model_episode)
 
         self.total_steps = hyper_params['drl_total_steps']
         self.save_interval = hyper_params['drl_save_interval']
