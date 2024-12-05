@@ -10,7 +10,7 @@ from core.lib.content import Task
 __all__ = ('CASVABSTOperation',)
 
 
-@ClassFactory.register(ClassType.GEN_BSO, alias='casva')
+@ClassFactory.register(ClassType.GEN_BSTO, alias='casva')
 class CASVABSTOperation(BaseBSTOperation, abc.ABC):
     def __init__(self):
         # in multiprocessing env, we should use disk file to transmit past task info

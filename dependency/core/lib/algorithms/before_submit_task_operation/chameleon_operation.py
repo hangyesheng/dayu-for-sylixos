@@ -8,7 +8,7 @@ from core.lib.content import Task
 __all__ = ('ChameleonBSTOperation',)
 
 
-@ClassFactory.register(ClassType.GEN_BSO, alias='chameleon')
+@ClassFactory.register(ClassType.GEN_BSTO, alias='chameleon')
 class ChameleonBSTOperation(BaseBSTOperation, abc.ABC):
     def __init__(self):
         pass
