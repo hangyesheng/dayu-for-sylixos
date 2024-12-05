@@ -80,7 +80,6 @@ class CASVAAgent(BaseAgent, abc.ABC):
         self.intermediate_decision = [0 for _ in range(self.action_dim)]
 
         self.latest_policy = None
-        self.latest_task_delay = None
         self.schedule_plan = None
 
     def get_drl_state_buffer(self):
@@ -222,13 +221,12 @@ class CASVAAgent(BaseAgent, abc.ABC):
 
     def update_scenario(self, scenario):
         try:
-            object_number = np.mean(scenario['obj_num'])
-            object_size = np.mean(scenario['obj_size'])
             task_delay = scenario['delay']
+            buffer_size = scenario["buffer_size"]
+            segment_size = scenario["segment_size"]
+            content_dynamics = scenario["content_dynamics"]
 
-            self.latest_task_delay = task_delay
-
-            self.state_buffer.add_scenario_buffer([object_number, object_size, task_delay])
+            self.state_buffer.add_scenario_buffer([task_delay, buffer_size, segment_size, content_dynamics])
         except Exception as e:
             LOGGER.warning(f'Wrong scenario from Distributor: {str(e)}')
 
@@ -242,12 +240,10 @@ class CASVAAgent(BaseAgent, abc.ABC):
 
         resolution_decision = self.system.resolution_list.index(policy['resolution'])
         fps_decision = self.system.fps_list.index(policy['fps'])
-        buffer_size_decision = self.system.buffer_size_list.index(policy['buffer_size'])
-        pipeline_decision = next((i for i, service in enumerate(policy['pipeline'])
-                                  if service['execute_device'] == self.system.cloud_device),
-                                 len(policy['pipeline']) - 1)
+        qp_decision = self.system.qp_list.index(policy['qp_size'])
+
         self.state_buffer.add_decision_buffer([resolution_decision, fps_decision,
-                                               buffer_size_decision, pipeline_decision])
+                                               qp_decision])
 
     def update_task(self, task):
         self.state_buffer.add_task_buffer(task)

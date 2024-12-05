@@ -8,7 +8,7 @@ pod-template:
     - name: SCH_CONFIG_PARAMETERS
       value: "{'casva_drl_config':'drl_parameters_casva.yaml', 'casva_hyper_config':'hyper_parameters_casva.yaml'}"
     - name: SCH_SCENARIO_NAME
-      value: simple
+      value: casva
     - name: SCH_STARTUP_NAME
       value: fixed
     - name: SCH_POLICY_NAME

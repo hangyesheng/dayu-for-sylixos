@@ -72,6 +72,14 @@ scheduler-policies:
       controller: controller-base.yaml
       distributor: distributor-base.yaml
       monitor: monitor-base.yaml
+  - id: cevas
+    name: CEVAS
+    yaml: cevas.yaml
+    dependency:
+      generator: generator-base.yaml
+      controller: controller-base.yaml
+      distributor: distributor-base.yaml
+      monitor: monitor-base.yaml
   - id: chameleon
     name: Chameleon
     dependency:

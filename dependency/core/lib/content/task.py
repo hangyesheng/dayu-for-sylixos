@@ -158,6 +158,15 @@ class Task:
 
         return total_time
 
+    def calculate_cloud_edge_transmit_time(self):
+        assert self.__pipeline_flow, 'pipeline of task is empty!'
+        assert self.__cur_flow_index < len(self.__pipeline_flow), 'pipeline is not completed!'
+        transmit_time = 0
+        for service in self.__pipeline_flow:
+            transmit_time = max(transmit_time, service.get_transmit_time())
+
+        return transmit_time
+
     def get_delay_info(self):
         assert self.__pipeline_flow, 'pipeline of task is empty!'
         assert self.__cur_flow_index < len(self.__pipeline_flow), 'pipeline is not completed!'
@@ -170,7 +179,7 @@ class Task:
                           f'execute delay:{service.get_execute_time():.4f}s    ' \
                           f'transmit delay:{service.get_transmit_time():.4f}s\n'
             total_time += service.get_service_total_time()
-        delay_info += f'total delay:{total_time:.4f}s average delay: {total_time/self.get_metadata()["buffer_size"]:.4f}s'
+        delay_info += f'total delay:{total_time:.4f}s average delay: {total_time / self.get_metadata()["buffer_size"]:.4f}s'
         return delay_info
 
     def get_flow_index(self):

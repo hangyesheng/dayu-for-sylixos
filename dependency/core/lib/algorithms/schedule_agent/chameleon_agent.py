@@ -10,7 +10,7 @@ from core.lib.content import Task
 
 from .base_agent import BaseAgent
 import time
-import cv2
+
 
 __all__ = ('ChameleonAgent',)
 
@@ -187,6 +187,7 @@ class ChameleonAgent(BaseAgent, abc.ABC):
         self.acc_estimator = AccEstimator(hash_file_path, gt_file_path)
 
     def process_video(self, resolution, fps):
+        import cv2
         raw_fps = 30
         fps = min(fps, raw_fps)
         fps_mode, skip_frame_interval, remain_frame_interval = self.get_fps_adjust_mode(raw_fps, fps)
@@ -248,6 +249,7 @@ class ChameleonAgent(BaseAgent, abc.ABC):
 
     @staticmethod
     def compress_video(frames):
+        import cv2
         fourcc = cv2.VideoWriter_fourcc('mp4v')
         height, width, _ = frames[0].shape
         video_path = f'temp_{int(time.time())}.mp4'
