@@ -621,13 +621,17 @@ class BackendServer:
         :return:
         file
         """
-        formatted_time = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+        file_name = self.server.get_log_file_name()
+        if not file_name:
+            formatted_time = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+            file_name = f'LOG_SYSTEM_DAYU_NAMESPACE_{self.server.namespace}_TIME_{formatted_time}'
+
         log_content = self.server.download_log_file()
         with open(self.server.log_file_path, 'w') as f:
             json.dump(log_content, f)
         backtask.add_task(FileOps.remove_file, self.server.log_file_path)
         return FileResponse(
             path=self.server.log_file_path,
-            filename=f'LOG_SYSTEM_DAYU_NAMESPACE_{self.server.namespace}_TIME_{formatted_time}.json',
+            filename=f'f{file_name}.json',
             background=backtask.add_task(FileOps.remove_file, self.server.log_file_path)
         )

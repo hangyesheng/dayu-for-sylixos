@@ -1,5 +1,6 @@
 namespace: dayu
 log-level: DEBUG
+log-file-name:
 pod-permission:
   service-account: worker-admin
   cluster-role-binding: worker-admin-binding

@@ -55,6 +55,13 @@ class BackendCore:
         except KeyError as e:
             LOGGER.warning(f'Parse base info failed: {str(e)}')
 
+    def get_log_file_name(self):
+        base_info = self.template_helper.load_base_info()
+        load_file_name = base_info['load-file-name']
+        if not load_file_name:
+            return None
+        return load_file_name.split('.')[0]
+
     def parse_apply_templates(self, policy, source_deploy):
         yaml_dict = {}
 
