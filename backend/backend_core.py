@@ -57,7 +57,7 @@ class BackendCore:
 
     def get_log_file_name(self):
         base_info = self.template_helper.load_base_info()
-        load_file_name = base_info['load-file-name']
+        load_file_name = base_info['log-file-name']
         if not load_file_name:
             return None
         return load_file_name.split('.')[0]

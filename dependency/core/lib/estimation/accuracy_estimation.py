@@ -12,7 +12,12 @@ class AccEstimator:
         acc_list = []
         gt_frames_index_list = self.find_gt_frames_index(fps_ratio, frame_hash_codes)
 
-        if not predictions or not gt_frames_index_list:
+        # no object in scene
+        if not gt_frames_index_list:
+            return 1
+
+        # no prediction
+        if not predictions:
             return 0
 
         for prediction, gt_frames_index in zip(predictions, gt_frames_index_list):
@@ -41,6 +46,7 @@ class AccEstimator:
                                             if (iter_num + 1) % add_frame_interval == 0 else [frame_index])
         else:
             gt_frames_index_list = [[self.search_frame_index(hash_data)] for hash_data in frame_hash_codes]
+
         return gt_frames_index_list
 
     def get_frame_ground_truth(self, index, resolution_ratio):
@@ -48,10 +54,12 @@ class AccEstimator:
             return []
 
         info = self.data_gt[index].strip()
-        if info == '':
-            return []
 
         info = info.split(' ')
+        assert int(info[0]) == index, f'frame index {index} is not equal to ground truth index {info[0]}'
+
+        info = info[1:]
+
         bbox_gt = [float(b) for b in info]
         boxes_gt = np.array(bbox_gt, dtype=np.float32).reshape(-1, 4)
         frame_gt = []
@@ -101,8 +109,11 @@ class AccEstimator:
         ground_truths: list of dicts with keys {'bbox': [x1, y1, x2, y2], 'class': class_id}
         """
 
+        # no object in scene
         if not ground_truths:
             return 1
+
+        # no prediction
         if not predictions:
             return 0
 

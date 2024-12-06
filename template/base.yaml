@@ -1,6 +1,6 @@
 namespace: dayu
 log-level: DEBUG
-log-file-name:
+log-file-name: road_dense_test
 pod-permission:
   service-account: worker-admin
   cluster-role-binding: worker-admin-binding
@@ -16,7 +16,7 @@ datasource:
   use-simulation: true
   node: edgex1
   data-root: "/data/datasource-dense/"
-  play-mode: cycle
+  play-mode: non-cycle
 scheduler-policies:
   - id: fixed
     name: Fixed Policy
