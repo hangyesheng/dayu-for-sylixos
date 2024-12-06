@@ -108,6 +108,6 @@ if __name__ == '__main__':
     parser.add_argument('--play_mode', type=str, required=True)
     args = parser.parse_args()
 
-    port = int(args.adress.split(':')[-1])
+    port = int(args.address.split(':')[-1])
     video = VideoSource(args.root, args.play_mode)
     uvicorn.run(video.app, host='0.0.0.0', port=port)
