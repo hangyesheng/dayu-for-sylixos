@@ -34,11 +34,12 @@ class HttpVideoGetter(BaseDataGetter, abc.ABC):
 
         response = None
         self.hash_codes = None
-        while self.hash_codes is None or response is None:
+        while not self.hash_codes or not response:
             self.hash_codes = http_request(system.video_data_source + '/source', method='GET',
                                            data={'data': json.dumps(data)})
 
-            response = http_request(system.video_data_source + '/file', method='GET', no_decode=True)
+            if self.hash_codes:
+                response = http_request(system.video_data_source + '/file', method='GET', no_decode=True)
 
         self.file_name = f'video_source_{system.source_id}_task_{system.task_id}.mp4'
 

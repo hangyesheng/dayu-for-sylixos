@@ -77,6 +77,8 @@ spec:
             - env:
                 - name: INTERVAL
                   value: "2"
+                - name: RECURSIVE_MODE
+                  value: "$DATASOURCE_RECURSIVE_MODE"
                 - name: KUBERNETES_SERVICE_HOST
                   value: "$KUBERNETES_SERVICE_HOST"
                 - name: KUBERNETES_SERVICE_PORT
@@ -359,6 +361,7 @@ import_config() {
     DATASOURCE_USE_SIMULATION=$(yq e '.datasource.use-simulation' "$CONFIG_FILE")
     DATASOURCE_DATA_ROOT=$(yq e '.datasource.data-root' "$CONFIG_FILE")
     DATASOURCE_NODE=$(yq e '.datasource.node' "$CONFIG_FILE")
+    DATASOURCE_PLAY_MODE=$(yq e '.datasource.play-mode' "$CONFIG_FILE")
 
 
 }
@@ -414,6 +417,7 @@ display_config() {
     echo "  Datasource Simulation: $DATASOURCE_USE_SIMULATION"
     echo "  Datasource Data Root: $DATASOURCE_DATA_ROOT"
     echo "  Datasource Node: $DATASOURCE_NODE"
+    echo "  Datasource Play Mode: $DATASOURCE_PLAY_MODE"
     echo "  Master Node: $CLOUD_NODE"
     echo "  Master Node IP: $CLOUD_IP"
     echo "  Kubernetes Service Host: $KUBERNETES_SERVICE_HOST"

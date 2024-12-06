@@ -8,6 +8,7 @@ function show_help() {
     echo "Arguments:"
     echo "  --root <folder>:    Path to the folder containing video files."
     echo "  --address <address>: Specific address to append to 'rtsp://127.0.0.1/'."
+    echo "  --play_mode <mode>: cycle or non-cycle play mode"
     echo
     echo "Example:"
     echo "  $0 --root /path/to/your/video/folder --address your_specific_address"
@@ -43,11 +44,32 @@ echo "Starting mediamtx server..."
 
 rtsp_url="$rtsp_address"
 
-while true; do
-    for video_file in "$input_folder"/*; do
-        if [[ -f "$video_file" ]]; then
-            echo "Streaming $video_file to $rtsp_url"
-            ffmpeg -re -i "$video_file" -c:v copy -f rtsp "$rtsp_url"
+# Function to stream video files once or cycle based on play_mode
+stream_videos() {
+    local play_mode=$1
+    while true; do
+        # Get all video files in the folder
+        video_files=("$input_folder"/*)
+
+        # Check if there are any video files in the directory
+        if [[ ${#video_files[@]} -eq 0 ]]; then
+            echo "No video files found in the folder '$input_folder'."
+            break
+        fi
+
+        for video_file in "${video_files[@]}"; do
+            if [[ -f "$video_file" ]]; then
+                echo "Streaming $video_file to $rtsp_url"
+                ffmpeg -re -i "$video_file" -c:v copy -f rtsp "$rtsp_url"
+            fi
+        done
+
+        # If play_mode is "non-cycle", break after playing once
+        if [[ "$play_mode" == "non-cycle" ]]; then
+            echo "Stream video in non-cycle mode and end."
+            break
         fi
     done
-done
+}
+
+stream_videos "$play_mode"

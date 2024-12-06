@@ -14,7 +14,8 @@ default-file-mount-prefix: "/data/dayu-files"
 datasource:
   use-simulation: true
   node: edgex1
-  data-root: "/data/datasource/"
+  data-root: "/data/datasource-dense/"
+  play-mode: cycle
 scheduler-policies:
   - id: fixed
     name: Fixed Policy
