@@ -34,6 +34,7 @@ class DataSource:
 
         if self.play_mode not in ['cycle', 'non-cycle']:
             raise ValueError(f'play_mode must be cycle or non-cycle, given {self.play_mode}')
+        print(f'Play Mode: {self.play_mode}')
 
     def open_datasource(self, modal, label, mode, source_list):
         if self.source_open:
