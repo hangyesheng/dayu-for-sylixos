@@ -17,14 +17,14 @@ from core.lib.common import VideoOps, FileOps
 
 
 class VideoSource:
-    def __init__(self, data_root, play_mode):
+    def __init__(self, data_root, path, play_mode):
         self.app = FastAPI(routes=[
-            APIRoute('/source',
+            APIRoute(f'/{path}/source',
                      self.get_source_data,
                      response_class=JSONResponse,
                      methods=['GET']
                      ),
-            APIRoute('/file',
+            APIRoute(f'/{path}/file',
                      self.get_source_file,
                      response_class=FileResponse,
                      methods=['GET']
@@ -109,5 +109,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     port = int(args.address.split(':')[-1].split('/')[0])
-    video = VideoSource(args.root, args.play_mode)
+    path = args.address.split(':')[-1].split('/')[-1]
+    video = VideoSource(args.root, path, args.play_mode)
     uvicorn.run(video.app, host='0.0.0.0', port=port)
