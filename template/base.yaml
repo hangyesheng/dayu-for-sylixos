@@ -1,6 +1,6 @@
 namespace: dayu
 log-level: DEBUG
-log-file-name: road_dense_test
+log-file-name: street_sparse_test
 pod-permission:
   service-account: worker-admin
   cluster-role-binding: worker-admin-binding
@@ -15,7 +15,7 @@ default-file-mount-prefix: "/data/dayu-files"
 datasource:
   use-simulation: true
   node: edgex1
-  data-root: "/data/datasource-dense/"
+  data-root: "/data/datasource-evaluation/"
   play-mode: non-cycle
 scheduler-policies:
   - id: fixed

@@ -1,14 +1,13 @@
-source_name: "Street Camera (One Camera, HTTP)"
+source_name: "Road Sparse HTTP"
 source_type: "video"
 source_mode: "http_video"
 source_list:
-  - name: "street_camera_0"
+  - name: "road_camera_sparse"
     url: ""
-    dir: "street_0"
+    dir: "road_sparse/"
     metadata:
-      resolution: "1080p"
+      resolution: "540p"
       fps: 30
       encoding: "mp4v"
       buffer_size: 4
-
 

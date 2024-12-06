@@ -13,7 +13,7 @@ import uvicorn
 import argparse
 import time
 
-from core.lib.common import VideoOps, FileOps
+from core.lib.common import VideoOps, FileOps, LOGGER
 
 
 class VideoSource:
@@ -82,6 +82,9 @@ class VideoSource:
             frames_index = [x for x in frames_index if x < self.frame_max_count]
         else:
             frames_index = [x % self.frame_max_count for x in frames_index]
+
+        LOGGER.debug(f'frames_index: {frames_index}, max frame: {self.frame_max_count}')
+        LOGGER.debug(f'is end: {self.is_end}')
 
         resolution = VideoOps.text2resolution(resolution)
         out = cv2.VideoWriter(self.file_name, cv2.VideoWriter_fourcc(*encoding), 30,
