@@ -1,6 +1,9 @@
 class EncodeOps:
     @staticmethod
     def encode_image(image):
+        import numpy as np
+        import cv2
+        import base64
         """
         Encodes an image to a base64 string with a data URL prefix.
 
@@ -27,6 +30,9 @@ class EncodeOps:
 
     @staticmethod
     def decode_image(encoded_img_str):
+        import numpy as np
+        import cv2
+        import base64
         """
         Decodes a base64-encoded image string back into an OpenCV image (numpy array).
 
