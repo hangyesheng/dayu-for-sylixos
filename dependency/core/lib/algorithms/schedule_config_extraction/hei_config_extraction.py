@@ -23,8 +23,8 @@ class HEIConfigExtraction(BaseConfigExtraction, abc.ABC):
         scheduler.monotonic_schedule_knobs = ['resolution', 'fps', 'buffer_size']
         scheduler.non_monotonic_schedule_knobs = ['pipeline']
 
-        drl_parameters_config_path = Context.get_file_path(self.HEI_DRL_CONFIG)
+        drl_parameters_config_path = Context.get_file_path(os.path.join('scheduler/hei',self.HEI_DRL_CONFIG))
         scheduler.drl_params = YamlOps.read_yaml(drl_parameters_config_path)
 
-        hyper_parameters_config_path = Context.get_file_path(self.HEI_HYPER_CONFIG)
+        hyper_parameters_config_path = Context.get_file_path(os.path.join('scheduler/hei',self.HEI_HYPER_CONFIG))
         scheduler.hyper_params = YamlOps.read_yaml(hyper_parameters_config_path)
