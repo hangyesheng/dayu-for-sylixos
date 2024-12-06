@@ -632,6 +632,6 @@ class BackendServer:
         backtask.add_task(FileOps.remove_file, self.server.log_file_path)
         return FileResponse(
             path=self.server.log_file_path,
-            filename=f'f{file_name}.json',
+            filename=f'{file_name}.json',
             background=backtask.add_task(FileOps.remove_file, self.server.log_file_path)
         )
