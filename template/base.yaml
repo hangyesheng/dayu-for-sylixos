@@ -83,6 +83,7 @@ scheduler-policies:
       monitor: monitor-base.yaml
   - id: chameleon
     name: Chameleon
+    yaml: chameleon.yaml
     dependency:
       generator: generator-chameleon.yaml
       controller: controller-base.yaml

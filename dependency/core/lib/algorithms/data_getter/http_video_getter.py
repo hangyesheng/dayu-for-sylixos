@@ -51,7 +51,7 @@ class HttpVideoGetter(BaseDataGetter, abc.ABC):
         return max(1 / system.meta_data['fps'] * system.meta_data['buffer_size'] - cost, 0)
 
     def __call__(self, system):
-        delay = self.request_source_data()
+        delay = self.request_source_data(system)
 
         sleep_time = self.compute_cost_time(system, delay)
         LOGGER.info(f'[Camera Simulation] source {system.source_id}: sleep {sleep_time}s')

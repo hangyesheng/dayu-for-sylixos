@@ -1,4 +1,4 @@
-source_name: "Street Cameras"
+source_name: "Street Camera (One Camera, HTTP)"
 source_type: "video"
 source_mode: "http_video"
 source_list:
