@@ -59,7 +59,7 @@ class Context:
             return os.path.join(mount_prefix, 'volume0', file_name)
         else:
             for index in range(volume_num):
-                des_file_path = os.path.join(file_prefix, file_path)
+                des_file_path = os.path.join(file_prefix, file_dir)
                 raw_file_path = cls.get_parameter(f'VOLUME_{index}')
                 if des_file_path == raw_file_path:
                     return os.path.join(mount_prefix, f'volume{index}', file_name)
