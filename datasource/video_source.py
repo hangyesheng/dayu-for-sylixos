@@ -77,7 +77,7 @@ class VideoSource:
 
         self.frame_count = self.frame_count % self.frame_max_count
 
-        if self.play_mode == 'non-cycle' and frames_index[-1] >= self.frame_max_count:
+        if self.play_mode == 'non-cycle' and frames_index[-1] >= self.frame_max_count - 1:
             self.is_end = True
             frames_index = [x for x in frames_index if x < self.frame_max_count]
         else:
