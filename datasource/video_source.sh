@@ -18,19 +18,21 @@ function show_help() {
 
 input_folder=""
 rtsp_address=""
+play_mode=""
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --root) input_folder="$2"; shift ;;
         --address) rtsp_address="$2"; shift ;;
+        --play_mode) play_mode="$2"; shift ;;
         -h|--help) show_help ;;
         *) echo "Unknown parameter passed: $1"; show_help ;;
     esac
     shift
 done
 
-if [[ -z "$input_folder" || -z "$rtsp_address" ]]; then
-    echo "Error: --root and --address are required."
+if [[ -z "$input_folder" || -z "$rtsp_address" || -z "$play_mode" ]]; then
+    echo "Error: --root, --address and --play_mode are required."
     show_help
 fi
 

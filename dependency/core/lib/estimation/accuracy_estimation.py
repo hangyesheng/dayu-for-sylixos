@@ -3,9 +3,7 @@ import numpy as np
 
 
 class AccEstimator:
-    def __init__(self, hash_table_file: str, ground_truth_file: str):
-        self.hash_table = AnnoyIndex(64, 'hamming')
-        self.hash_table.load(hash_table_file)
+    def __init__(self, ground_truth_file: str):
 
         with open(ground_truth_file, 'r') as gt_f:
             self.data_gt = gt_f.readlines()
@@ -66,7 +64,8 @@ class AccEstimator:
         return frame_gt
 
     def search_frame_index(self, hash_data):
-        closest_frame_index = self.hash_table.get_nns_by_vector(np.array(hash_data, dtype=int), 1)[0]
+        # closest_frame_index = self.hash_table.get_nns_by_vector(np.array(hash_data, dtype=int), 1)[0]
+        closest_frame_index = hash_data
         return closest_frame_index
 
     @staticmethod

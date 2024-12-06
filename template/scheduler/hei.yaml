@@ -24,4 +24,4 @@ file-mount:
   - pos: cloud
     path: 'scheduler/hei/'
   - pos: cloud
-    path: 'acc-gt/'
+    path: 'acc-gt-dense/'

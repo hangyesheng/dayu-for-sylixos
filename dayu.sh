@@ -77,8 +77,8 @@ spec:
             - env:
                 - name: INTERVAL
                   value: "2"
-                - name: RECURSIVE_MODE
-                  value: "$DATASOURCE_RECURSIVE_MODE"
+                - name: PLAY_MODE
+                  value: "$DATASOURCE_PLAY_MODE"
                 - name: KUBERNETES_SERVICE_HOST
                   value: "$KUBERNETES_SERVICE_HOST"
                 - name: KUBERNETES_SERVICE_PORT
