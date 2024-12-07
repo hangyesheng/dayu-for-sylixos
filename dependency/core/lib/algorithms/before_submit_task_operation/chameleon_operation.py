@@ -3,7 +3,6 @@ import abc
 from .base_operation import BaseBSTOperation
 
 from core.lib.common import ClassFactory, ClassType, EncodeOps
-from core.lib.content import Task
 
 __all__ = ('ChameleonBSTOperation',)
 

@@ -11,7 +11,6 @@ from core.lib.content import Task
 from .base_agent import BaseAgent
 import time
 
-
 __all__ = ('ChameleonAgent',)
 
 """
@@ -28,7 +27,7 @@ Jiang J, Ananthanarayanan G, Bodik P, et al. Chameleon: scalable adaptation of v
 @ClassFactory.register(ClassType.SCH_AGENT, alias='chameleon')
 class ChameleonAgent(BaseAgent, abc.ABC):
 
-    def __init__(self, system, agent_id: int, fixed_policy: dict,
+    def __init__(self, system, agent_id: int, fixed_policy: dict, acc_gt_dir: str,
                  best_num: int = 5, threshold=0.1,
                  profile_window=16, segment_size=4, calculate_time=1):
         self.agent_id = agent_id
@@ -73,11 +72,7 @@ class ChameleonAgent(BaseAgent, abc.ABC):
         # 对F1_score进行排序时用到的阈值
         self.threshold = threshold
 
-        self.profile_video_dir = Context.get_file_path('extract_cut_car')
-
-        self.profile_video_point = 0
-        self.profile_video_num = len(os.listdir(self.profile_video_dir))
-
+        self.acc_gt_dir = acc_gt_dir
         self.acc_estimator = None
 
     def get_all_knob_combinations(self):
@@ -181,10 +176,9 @@ class ChameleonAgent(BaseAgent, abc.ABC):
     def create_acc_estimator(self):
         if not self.current_analytics:
             raise ValueError('No value of "current_analytics" has been set')
-        gt_path_prefix = os.path.join(FileNameConstant.ACC_GT_DIR.value, self.current_analytics)
+        gt_path_prefix = os.path.join(self.acc_gt_dir, self.current_analytics)
         gt_file_path = Context.get_file_path(os.path.join(gt_path_prefix, 'gt_file.txt'))
-        hash_file_path = Context.get_file_path(os.path.join(gt_path_prefix, 'hash_file.ann'))
-        self.acc_estimator = AccEstimator(hash_file_path, gt_file_path)
+        self.acc_estimator = AccEstimator(gt_file_path)
 
     def process_video(self, resolution, fps):
         import cv2
@@ -265,6 +259,7 @@ class ChameleonAgent(BaseAgent, abc.ABC):
         frame_encoded = info['frame']
         if frame_encoded:
             self.raw_frames.put(EncodeOps.decode_image(frame_encoded))
+            LOGGER.info('[Fetch Frame] Fetch a frame from generator..')
 
         if not self.best_config_list:
             LOGGER.info('[No best config list] the length of best_config_list is 0!')
