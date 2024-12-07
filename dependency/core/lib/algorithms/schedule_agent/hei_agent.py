@@ -156,7 +156,7 @@ class HEIAgent(BaseAgent, abc.ABC):
         LOGGER.info(f'[Reward Computing] delay:{final_delay} acc:{final_acc}')
 
         if final_delay < 0:
-            reward = min(final_delay * 20, -2)
+            reward = max(final_delay * 20, -2)
         else:
             reward = 1 / max(final_delay, 0.5) * 0.3 + final_acc
 
