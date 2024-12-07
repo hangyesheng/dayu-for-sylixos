@@ -110,8 +110,7 @@ class HEISYNAgent(BaseAgent, abc.ABC):
     def create_acc_estimator(self, service_name: str):
         gt_path_prefix = os.path.join(FileNameConstant.ACC_GT_DIR.value, service_name)
         gt_file_path = Context.get_file_path(os.path.join(gt_path_prefix, 'gt_file.txt'))
-        hash_file_path = Context.get_file_path(os.path.join(gt_path_prefix, 'hash_file.ann'))
-        self.acc_estimator = AccEstimator(hash_file_path, gt_file_path)
+        self.acc_estimator = AccEstimator(gt_file_path)
 
     def calculate_drl_reward(self, evaluation_info):
         delay_bias_list = []
@@ -133,7 +132,7 @@ class HEISYNAgent(BaseAgent, abc.ABC):
             fps_ratio = meta_data['fps'] / raw_metadata['fps']
 
             if not self.acc_estimator:
-                self.create_acc_estimator(service_name=pipeline[0]['service_name'])
+                self.create_acc_estimator(service_name=pipeline[0].get_service_name())
 
             acc = self.acc_estimator.calculate_accuracy(hash_data, content, resolution_ratio, fps_ratio)
             acc_list.append(acc)
