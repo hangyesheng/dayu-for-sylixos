@@ -19,7 +19,6 @@ class SystemConstant(Enum):
 class FileNameConstant(Enum):
     SCHEDULE_CONFIG = 'scheduler_config.yaml'
     DISTRIBUTOR_RECORD = 'record_data.db'
-    ACC_GT_DIR = 'acc-gt'
 
 
 class NodeRoleConstant(Enum):

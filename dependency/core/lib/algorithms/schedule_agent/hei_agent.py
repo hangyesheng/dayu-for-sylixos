@@ -22,7 +22,8 @@ class HEIAgent(BaseAgent, abc.ABC):
                  mode: str = 'inference',
                  model_dir: str = 'model',
                  load_model: bool = False,
-                 load_model_episode: int = 0):
+                 load_model_episode: int = 0,
+                 acc_gt_dir: str = ''):
         from .hei import SoftActorCritic, RandomBuffer, Adapter, NegativeFeedback, StateBuffer
 
         self.agent_id = agent_id
@@ -48,6 +49,7 @@ class HEIAgent(BaseAgent, abc.ABC):
         self.state_dim = drl_params['state_dims']
         self.action_dim = drl_params['action_dim']
 
+        self.acc_gt_dir = acc_gt_dir
         self.acc_estimator = None
 
         self.model_dir = Context.get_file_path(os.path.join('scheduler/hei', model_dir, f'agent_{self.agent_id}'))
@@ -105,7 +107,7 @@ class HEIAgent(BaseAgent, abc.ABC):
         return state, reward, done, info
 
     def create_acc_estimator(self, service_name: str):
-        gt_path_prefix = os.path.join(FileNameConstant.ACC_GT_DIR.value, service_name)
+        gt_path_prefix = os.path.join(self.acc_gt_dir, service_name)
         gt_file_path = Context.get_file_path(os.path.join(gt_path_prefix, 'gt_file.txt'))
         self.acc_estimator = AccEstimator(gt_file_path)
 
