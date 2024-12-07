@@ -6,7 +6,7 @@ import numpy as np
 
 from core.lib.common import ClassFactory, ClassType, LOGGER, FileOps, Context
 from core.lib.estimation import AccEstimator
-from core.lib.common import VideoOps, FileNameConstant
+from core.lib.common import VideoOps
 
 from .base_agent import BaseAgent
 
@@ -67,6 +67,18 @@ class HEIAgent(BaseAgent, abc.ABC):
         self.latest_policy = None
         self.latest_task_delay = None
         self.schedule_plan = None
+
+        self.reward_file = Context.get_file_path(os.path.join('scheduler/hei', 'reward.txt'))
+        if os.path.exists(self.reward_file):
+            FileOps.remove_file(self.reward_file)
+
+        self.macro_overhead_file = Context.get_file_path(os.path.join('scheduler/hei', 'macro_overhead.txt'))
+        if os.path.exists(self.macro_overhead_file):
+            FileOps.remove_file(self.macro_overhead_file)
+
+        self.micro_overhead_file = Context.get_file_path(os.path.join('scheduler/hei', 'micro_overhead.txt'))
+        if os.path.exists(self.micro_overhead_file):
+            FileOps.remove_file(self.micro_overhead_file)
 
     def get_drl_state_buffer(self):
         while True:
@@ -148,13 +160,21 @@ class HEIAgent(BaseAgent, abc.ABC):
         else:
             reward = 1 / max(final_delay, 0.5) * 0.3 + final_acc
 
+        with open(self.reward_file, 'a') as f:
+            f.write(f'delay:{final_delay} acc:{final_acc} reward:{reward}\n')
+
         return reward
 
     def train_drl_agent(self):
         LOGGER.info(f'[DRL Train] (agent {self.agent_id}) Start train drl agent ..')
         state = self.reset_drl_env()
         for step in range(self.total_steps):
+
+            start_time = time.time()
             action = self.drl_agent.select_action(state, deterministic=False, with_logprob=False)
+            end_time = time.time()
+            with open(self.macro_overhead_file, 'a') as f:
+                f.write(f'{(end_time - start_time) * 1000}\n')
 
             next_state, reward, done, info = self.step_drl_env(action)
             done = self.adapter.done_adapter(done, step)
@@ -183,7 +203,13 @@ class HEIAgent(BaseAgent, abc.ABC):
         while True:
             time.sleep(self.drl_schedule_interval)
             cur_step += 1
+
+            start_time = time.time()
             action = self.drl_agent.select_action(state, deterministic=False, with_logprob=False)
+            end_time = time.time()
+            with open(self.macro_overhead_file, 'a') as f:
+                f.write(f'{(end_time - start_time) * 1000}\n')
+
             next_state, reward, done, info = self.step_drl_env(action)
             done = self.adapter.done_adapter(done, cur_step)
             state = next_state
@@ -197,7 +223,12 @@ class HEIAgent(BaseAgent, abc.ABC):
         while True:
             time.sleep(self.nf_schedule_interval)
 
+            start_time = time.time()
             self.schedule_plan = self.nf_agent(self.latest_policy, self.latest_task_delay, self.intermediate_decision)
+            end_time = time.time()
+            with open(self.micro_overhead_file, 'a') as f:
+                f.write(f'{(end_time - start_time) * 1000}\n')
+
             LOGGER.debug(f'[NF Update] (agent {self.agent_id}) schedule: {self.schedule_plan}')
 
     def update_scenario(self, scenario):
