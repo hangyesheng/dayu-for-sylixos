@@ -43,6 +43,8 @@ class BackendCore:
         self.save_yaml_path = 'resources.yaml'
         self.log_file_path = 'log.json'
 
+        self.default_visualization_image = 'default_visualization.png'
+
         self.parse_base_info()
 
     def parse_base_info(self):
@@ -232,7 +234,7 @@ class BackendCore:
 
                     base64_data = EncodeOps.encode_image(image)
                 except Exception as e:
-                    base64_data = bytes('', encoding='utf8')
+                    base64_data = EncodeOps.encode_image(self.default_visualization_image)
                     LOGGER.warning(f'Video visualization fetch failed: {str(e)}')
                 if os.path.exists(file_path):
                     os.remove(file_path)
