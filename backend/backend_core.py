@@ -1,3 +1,4 @@
+import cv2
 import numpy as np
 import os
 import time
@@ -234,7 +235,9 @@ class BackendCore:
 
                     base64_data = EncodeOps.encode_image(image)
                 except Exception as e:
-                    base64_data = EncodeOps.encode_image(self.default_visualization_image)
+                    base64_data = EncodeOps.encode_image(
+                        cv2.imread(self.default_visualization_image)
+                    )
                     LOGGER.warning(f'Video visualization fetch failed: {str(e)}')
                 if os.path.exists(file_path):
                     os.remove(file_path)
