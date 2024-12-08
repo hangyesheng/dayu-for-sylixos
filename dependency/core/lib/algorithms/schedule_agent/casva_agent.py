@@ -88,6 +88,10 @@ class CASVAAgent(BaseAgent, abc.ABC):
         self.past_buffer_size_value = 0
         self.latest_skip_count = 0
 
+        self.overhead_file = Context.get_file_path(os.path.join('scheduler/casva', 'casva_overhead.txt'))
+        if os.path.exists(self.overhead_file):
+            FileOps.remove_file(self.overhead_file)
+
     def get_drl_state_buffer(self):
         while True:
             state, evaluation_info = self.state_buffer.get_state_buffer()
@@ -206,7 +210,11 @@ class CASVAAgent(BaseAgent, abc.ABC):
         LOGGER.info(f'[CASVA DRL Train] (agent {self.agent_id}) Start train drl agent ..')
         state = self.reset_drl_env()
         for step in range(self.total_steps):
+            start_time = time.time()
             action = self.drl_agent.select_action(state, deterministic=False, with_logprob=False)
+            end_time = time.time()
+            with open(self.overhead_file, 'a') as f:
+                f.write(f'{(end_time - start_time) * 1000}\n')
 
             next_state, reward, done, info = self.step_drl_env(action)
             done = self.adapter.done_adapter(done, step)
@@ -235,7 +243,13 @@ class CASVAAgent(BaseAgent, abc.ABC):
         while True:
             time.sleep(self.drl_schedule_interval)
             cur_step += 1
+
+            start_time = time.time()
             action = self.drl_agent.select_action(state, deterministic=False, with_logprob=False)
+            end_time = time.time()
+            with open(self.overhead_file, 'a') as f:
+                f.write(f'{(end_time - start_time) * 1000}\n')
+
             next_state, reward, done, info = self.step_drl_env(action)
             done = self.adapter.done_adapter(done, cur_step)
             state = next_state
