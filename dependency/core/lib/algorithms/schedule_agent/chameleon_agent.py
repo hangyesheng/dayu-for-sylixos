@@ -122,7 +122,7 @@ class ChameleonAgent(BaseAgent, abc.ABC):
         # 计算每一种配置组合的得分config_score
         for config in self.all_config_list:
             target_config_list.append((config, self.calculate_config_score(config, each_knob_score)))
-
+        LOGGER.debug(f'[Config List] {target_config_list}')
         # 根据score为所有配置进行排序, 排序的时候过滤掉得分小于等于阈值的, 最后根据排序结果取最优的best_num个。
         # target_config_list中的每一个元素都是二元组，分别是配置以及得分
         target_config_list = [x for x in sorted(target_config_list, key=lambda x: x[1], reverse=True) if
@@ -147,7 +147,7 @@ class ChameleonAgent(BaseAgent, abc.ABC):
         # 为已有的best_num个配置打分
         for config in self.best_config_list:
             target_config_list.append((config, self.calculate_config_score(config, each_knob_score)))
-
+        LOGGER.debug(f'[Config List] {target_config_list}')
         # 从已有的配置来选择最优的，不需要机械能筛选
         target_config_list = [x for x in sorted(target_config_list, key=lambda x: x[1], reverse=True)]
 
