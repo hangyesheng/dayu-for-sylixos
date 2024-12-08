@@ -178,6 +178,8 @@ class ChameleonAgent(BaseAgent, abc.ABC):
             frames, hash_data = self.process_video(resolution, fps)
             LOGGER.debug(f'[FRAMES] length of frames:{len(frames)}')
             results = self.execute_analytics(frames)
+            LOGGER.debug(f'[Analysis results] {results}')
+            LOGGER.debug(f'[Hash codes] {hash_data}')
             if not self.acc_estimator:
                 self.create_acc_estimator()
             acc = self.acc_estimator.calculate_accuracy(hash_data, results, resolution_ratio, fps / 30)
