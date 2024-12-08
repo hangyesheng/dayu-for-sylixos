@@ -144,6 +144,8 @@ class ChameleonAgent(BaseAgent, abc.ABC):
                 score = self.get_f1_score(new_config)
                 each_knob_score[value] = score
 
+        LOGGER.debug(f'[Knob Score] {each_knob_score}')
+
         # 为已有的best_num个配置打分
         for config in self.best_config_list:
             target_config_list.append((config, self.calculate_config_score(config, each_knob_score)))
