@@ -201,6 +201,7 @@ class ChameleonAgent(BaseAgent, abc.ABC):
         frame_count = 0
         frame_list = []
         frames = self.profiling_frames.copy()
+        LOGGER.debug(f'[FRAMES] get from profiling frames num: {len(frames)}')
         frame_hash_codes = self.profiling_frame_hash_codes.copy()
         for frame in frames:
             frame_count += 1
