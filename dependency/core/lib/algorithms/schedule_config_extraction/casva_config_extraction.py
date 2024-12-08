@@ -22,8 +22,8 @@ class CASVAConfigExtraction(BaseConfigExtraction, abc.ABC):
         scheduler.qp_list = configs['qp']
         scheduler.schedule_knobs = ['resolution', 'fps', 'qp']
 
-        drl_parameters_config_path = Context.get_file_path(self.CASVA_DRL_CONFIG)
+        drl_parameters_config_path = Context.get_file_path(os.path.join('scheduler/casva', self.CASVA_DRL_CONFIG))
         scheduler.drl_params = YamlOps.read_yaml(drl_parameters_config_path)
 
-        hyper_parameters_config_path = Context.get_file_path(self.CASVA_HYPER_CONFIG)
+        hyper_parameters_config_path = Context.get_file_path(os.path.join('scheduler/casva', self.CASVA_HYPER_CONFIG))
         scheduler.hyper_params = YamlOps.read_yaml(hyper_parameters_config_path)
