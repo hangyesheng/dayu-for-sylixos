@@ -19,6 +19,7 @@ class ClassType:
     GEN_FILTER = 'generator_frame_filter'
     GEN_PROCESS = 'generator_frame_process'
     GEN_GETTER = 'generator_data_getter'
+    GEN_GETTER_FILTER = 'generator_data_getter_filter'
 
     SCH_AGENT = 'scheduler_agent'
     SCH_STARTUP = 'scheduler_startup_policy'

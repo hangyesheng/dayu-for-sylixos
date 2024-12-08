@@ -5,6 +5,8 @@ pod-template:
   env:
     - name: GEN_FILTER_NAME
       value: simple
+    - name: GEN_GETTER_FILTER_NAME
+      value: simple
     - name: GEN_PROCESS_NAME
       value: simple
     - name: GEN_COMPRESS_NAME

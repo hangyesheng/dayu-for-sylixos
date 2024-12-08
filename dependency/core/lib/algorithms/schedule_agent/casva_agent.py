@@ -5,6 +5,7 @@ import numpy as np
 
 from core.lib.common import ClassFactory, ClassType, LOGGER, FileOps, Context
 from core.lib.common import VideoOps
+from core.lib.estimation import AccEstimator
 
 from .base_agent import BaseAgent
 
@@ -32,7 +33,8 @@ class CASVAAgent(BaseAgent, abc.ABC):
                  segment_length: int = 2,
                  model_dir: str = 'model',
                  load_model: bool = False,
-                 load_model_episode: int = 0):
+                 load_model_episode: int = 0,
+                 acc_gt_dir: str = ''):
         from .casva import DualClippedPPO, RandomBuffer, Adapter, StateBuffer
 
         assert streaming_mode in ['latency_first', 'delivery_first'], \
@@ -67,7 +69,7 @@ class CASVAAgent(BaseAgent, abc.ABC):
         self.state_dim = drl_params['state_dims']
         self.action_dim = drl_params['action_dim']
 
-        self.model_dir = Context.get_file_path(os.path.join('scheduler/hei', model_dir, f'agent_{self.agent_id}'))
+        self.model_dir = Context.get_file_path(os.path.join('scheduler/casva', model_dir, f'agent_{self.agent_id}'))
         FileOps.create_directory(self.model_dir)
         if load_model:
             self.drl_agent.load(self.model_dir, load_model_episode)
@@ -77,10 +79,14 @@ class CASVAAgent(BaseAgent, abc.ABC):
         self.update_interval = hyper_params['drl_update_interval']
         self.update_after = hyper_params['drl_update_after']
 
-        self.intermediate_decision = [0 for _ in range(self.action_dim)]
-
         self.latest_policy = None
         self.schedule_plan = None
+
+        self.acc_gt_dir = acc_gt_dir
+        self.acc_estimator = None
+
+        self.past_buffer_size_value = 0
+        self.latest_skip_count = 0
 
     def get_drl_state_buffer(self):
         while True:
@@ -139,24 +145,27 @@ class CASVAAgent(BaseAgent, abc.ABC):
 
         return state, reward, done, info
 
-    # TODO: reward
-    def calculate_drl_reward(self, evaluation_info):
-        if self.streaming_mode == 'latency_first':
-            pass
-        elif self.streaming_mode == 'delivery_first':
-            pass
-        else:
-            raise ValueError('"streaming_mode" must be "latency_first" or "delivery_first"')
+    def create_acc_estimator(self, service_name: str):
+        gt_path_prefix = os.path.join(self.acc_gt_dir, service_name)
+        gt_file_path = Context.get_file_path(os.path.join(gt_path_prefix, 'gt_file.txt'))
+        self.acc_estimator = AccEstimator(gt_file_path)
 
-        delay_bias_list = []
+    def calculate_drl_reward(self, evaluation_info):
+
+        acc_list = []
+        transmit_delay_list = []
+        buffer_size_list = []
 
         for task in evaluation_info:
-            delay = task.calculate_total_time()
             meta_data = task.get_metadata()
             raw_metadata = task.get_raw_metadata()
             content = task.get_content()
+            pipeline = task.get_pipeline()
 
             hash_data = task.get_hash_data()
+
+            buffer_size = meta_data['buffer_size']
+            buffer_size_list.append(buffer_size)
 
             raw_resolution = VideoOps.text2resolution(raw_metadata['resolution'])
             resolution = VideoOps.text2resolution(meta_data['resolution'])
@@ -164,22 +173,37 @@ class CASVAAgent(BaseAgent, abc.ABC):
 
             fps_ratio = meta_data['fps'] / raw_metadata['fps']
 
-            single_task_delay = delay / meta_data['buffer_size']
-            single_task_constraint = 1 / meta_data['fps']
-            delay_bias_list.append(single_task_constraint * 1.6 - single_task_delay)
+            transmit_delay_list.append(task.calculate_cloud_edge_transmit_time())
 
-        final_delay = np.mean(delay_bias_list)
-        LOGGER.info(f'[Reward Computing] delay:{final_delay} acc:{final_acc}')
+            if not self.acc_estimator:
+                self.create_acc_estimator(service_name=pipeline[0].get_service_name())
+            acc = self.acc_estimator.calculate_accuracy(hash_data, content, resolution_ratio, fps_ratio)
+            acc_list.append(acc)
 
-        if final_delay < 0:
-            reward = min(final_delay * 20, -2)
+        final_acc = np.mean(acc_list)
+        final_transmit_delay = np.mean(transmit_delay_list)
+        final_buffer_size = np.mean(buffer_size_list)
+
+        if self.streaming_mode == 'latency_first':
+            reward = (5 * final_acc - 1 * max(final_transmit_delay - self.segment_length, 0) / self.segment_length
+                      - 1 * self.latest_skip_count)
+
+            LOGGER.info(f'[CASVA Reward Computing] (latency first)')
+        elif self.streaming_mode == 'delivery_first':
+            reward = (2 * final_acc - 3 * max(final_transmit_delay - self.segment_length, 0) / self.segment_length
+                      + ((final_buffer_size - self.past_buffer_size_value) / self.segment_length
+                         if final_buffer_size < self.past_buffer_size_value else 0))
+
+            self.past_buffer_size_value = final_buffer_size
+
+            LOGGER.info(f'[CASVA Reward Computing] (delivery first)')
         else:
-            reward = 1 / max(final_delay, 0.5) * 0.3 + final_acc
+            raise ValueError('"streaming_mode" must be "latency_first" or "delivery_first"')
 
         return reward
 
     def train_drl_agent(self):
-        LOGGER.info(f'[DRL Train] (agent {self.agent_id}) Start train drl agent ..')
+        LOGGER.info(f'[CASVA DRL Train] (agent {self.agent_id}) Start train drl agent ..')
         state = self.reset_drl_env()
         for step in range(self.total_steps):
             action = self.drl_agent.select_action(state, deterministic=False, with_logprob=False)
@@ -189,11 +213,11 @@ class CASVAAgent(BaseAgent, abc.ABC):
             self.replay_buffer.add(state, action, reward, next_state, done)
             state = next_state
 
-            LOGGER.info(f'[DRL Train Data] (agent {self.agent_id}) Step:{step}  Reward:{reward}')
+            LOGGER.info(f'[CASVA DRL Train Data] (agent {self.agent_id}) Step:{step}  Reward:{reward}')
 
             if step >= self.update_after and step % self.update_interval == 0:
                 for _ in range(self.update_interval):
-                    LOGGER.info(f'[DRL Train] (agent {self.agent_id}) Train drl agent with replay buffer')
+                    LOGGER.info(f'[CASVA DRL Train] (agent {self.agent_id}) Train drl agent with replay buffer')
                     self.drl_agent.train(self.replay_buffer)
 
             if step % self.save_interval == 0:
@@ -202,10 +226,10 @@ class CASVAAgent(BaseAgent, abc.ABC):
             if done:
                 state = self.reset_drl_env()
 
-        LOGGER.info(f'[DRL Train] (agent {self.agent_id}) End train drl agent ..')
+        LOGGER.info(f'[CASVA DRL Train] (agent {self.agent_id}) End train drl agent ..')
 
     def inference_drl_agent(self):
-        LOGGER.info(f'[DRL Inference] (agent {self.agent_id}) Start inference drl agent ..')
+        LOGGER.info(f'[CASVA DRL Inference] (agent {self.agent_id}) Start inference drl agent ..')
         state = self.reset_drl_env()
         cur_step = 0
         while True:
@@ -252,6 +276,7 @@ class CASVAAgent(BaseAgent, abc.ABC):
         self.latest_policy = policy
 
     def get_schedule_plan(self, info):
+        self.latest_skip_count = info['skip_count']
         return self.schedule_plan
 
     def run(self):

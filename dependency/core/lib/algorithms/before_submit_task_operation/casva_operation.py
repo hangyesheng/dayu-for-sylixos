@@ -1,10 +1,12 @@
 import abc
 import json
 import os
+import shutil
+import subprocess
 
 from .base_operation import BaseBSTOperation
 
-from core.lib.common import ClassFactory, ClassType, LOGGER
+from core.lib.common import ClassFactory, ClassType, LOGGER, VideoOps
 from core.lib.content import Task
 
 __all__ = ('CASVABSTOperation',)
@@ -15,37 +17,108 @@ class CASVABSTOperation(BaseBSTOperation, abc.ABC):
     def __init__(self):
         # # in multiprocessing env, we should use disk file to transmit past task info
         # self.past_info_record_path = 'casva_info_record.json'
-        pass
+        self.frame_count = 0
 
-    def load_past_info_record(self):
-        if not os.path.exists(self.past_info_record_path):
-            return None
+    def modify_file_qp(self, meta_data, file_path):
+        if 'qp' not in meta_data:
+            LOGGER.warning(f"'qp' not found in system metadata for {file_path}. Skipping compression.")
+            return
 
-        with open(self.past_info_record_path, 'r') as f:
-            return json.load(f)
+        qp = meta_data['qp']
 
-    def save_past_info_record(self, past_info_record):
-        with open(self.past_info_record_path, 'w') as f:
-            json.dump(past_info_record, f)
+        tmp_file_path = 'tmp.mp4'
 
-    def modify_file_qp(self, system, file_path):
-        if 'qp' in system.meta_data:
-            qp = system.meta_data['qp']
-            os.system(f'ffmpeg -i {buffer_tmp_path} -c:v libx264 -crf {qp} {buffer_path}')
-            LOGGER.debug(f'[Generator Compress] compress {buffer_path} into qp of {qp}')
+        try:
+            # Build ffmpeg command
+            cmd = [
+                'ffmpeg',
+                '-i', str(file_path),
+                '-c:v', 'libx264',
+                '-crf', str(qp),
+                '-y',  # Overwrite without asking
+                str(tmp_file_path)
+            ]
+
+            LOGGER.debug(f"Executing ffmpeg command: {' '.join(cmd)}")
+
+            # Execute the ffmpeg command
+            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+            if result.returncode != 0:
+                LOGGER.warning(f"ffmpeg failed for {file_path} with error: {result.stderr}")
+                return
+
+            # Replace the original file with the compressed file
+            shutil.move(str(tmp_file_path), str(file_path))
+            LOGGER.debug(f"[Generator Compress] Compressed {file_path} with qp={qp}")
+        except Exception as e:
+            LOGGER.exception(f"An error occurred while compressing {file_path}: {e}")
+
+    def filter_frame(self, fps_raw, fps) -> bool:
+        fps = int(min(fps, fps_raw))
+        fps_mode, skip_frame_interval, remain_frame_interval = self.get_fps_adjust_mode(fps_raw, fps)
+
+        self.frame_count += 1
+        if fps_mode == 'skip' and self.frame_count % skip_frame_interval == 0:
+            return False
+
+        if fps_mode == 'remain' and self.frame_count % remain_frame_interval != 0:
+            return False
+
+        return True
+
+    def get_fps_adjust_mode(self, fps_raw, fps):
+        skip_frame_interval = 0
+        remain_frame_interval = 0
+        if fps >= fps_raw:
+            fps_mode = 'same'
+        elif fps < fps_raw // 2:
+            fps_mode = 'remain'
+            remain_frame_interval = fps_raw // fps
+        else:
+            fps_mode = 'skip'
+            skip_frame_interval = fps_raw // (fps_raw - fps)
+
+        return fps_mode, skip_frame_interval, remain_frame_interval
+
+    def reprocess_data(self, compressed_file, meta_data, past_metadata):
+        import cv2
+        cap = cv2.VideoCapture(compressed_file)
+        frame_list = []
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            if self.filter_frame(meta_data['fps'], past_metadata['fps']):
+                resolution = VideoOps.text2resolution(past_metadata['resolution'])
+                frame = cv2.resize(frame, resolution)
+                frame_list.append(frame)
+
+        tmp_process_file = 'dynamic_tmp.mp4'
+
+        self.modify_file_qp(past_metadata, tmp_process_file)
+
+        return tmp_process_file
 
     def __call__(self, system, compressed_file, hash_codes):
-        self.modify_file_qp(system, compressed_file)
-
         task = system.current_task
 
-        # TODO: calculate content dynamics
         tmp_data = task.get_tmp_data()
         meta_data = task.get_metadata()
+
+        self.modify_file_qp(meta_data, compressed_file)
+
         file_size = os.path.getsize(compressed_file)
         tmp_data['file_size'] = file_size
 
-        tmp_data['file_dynamics'] = xxx
+        if hasattr(system, 'past_metadata') and hasattr(system, 'past_file_size'):
+            file_size_with_last_config = os.path.getsize(
+                self.reprocess_data(compressed_file, meta_data, system.past_metadata))
+            tmp_data['file_dynamics'] = (file_size_with_last_config - system.past_file_size) / system.past_file_size
+        else:
+            tmp_data['file_dynamics'] = 0
 
-
-
+        system.past_metadata = meta_data
+        system.past_file_size = file_size
+        task.set_tmp_data(tmp_data)
