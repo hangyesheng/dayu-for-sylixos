@@ -66,11 +66,9 @@ class ChameleonAgent(BaseAgent, abc.ABC):
 
         # 选择配置时所需的最新视频帧,一般数量也就几十帧
         self.raw_frames = Queue(maxsize=30)
-        self.raw_frame_hash_codes = Queue(maxsize=30)
         self.profiling_video_path = 'profiling_video.mp4'
 
         self.profiling_frames = []
-        self.profiling_frame_hash_codes = []
 
         self.task_pipeline = None
 
@@ -205,11 +203,10 @@ class ChameleonAgent(BaseAgent, abc.ABC):
 
         frame_count = 0
         frame_list = []
-        frames = self.profiling_frames.copy()
-        LOGGER.debug(f'[FRAMES] get from profiling frames num: {len(frames)}')
-        frame_hash_codes = self.profiling_frame_hash_codes.copy()
+        frames_info = self.profiling_frames.copy()
+        LOGGER.debug(f'[FRAMES] get from profiling frames num: {len(frames_info)}')
         new_frame_hash_codes = []
-        for frame, hash_code in zip(frames, frame_hash_codes):
+        for frame, hash_code in frames_info:
             frame_count += 1
             if fps_mode == 'skip' and frame_count % skip_frame_interval == 0:
                 continue
@@ -232,7 +229,7 @@ class ChameleonAgent(BaseAgent, abc.ABC):
 
         cur_path = self.compress_video(frames)
 
-        tmp_task = Task(source_id=0, task_id=0, source_device='',pipeline=self.task_pipeline)
+        tmp_task = Task(source_id=0, task_id=0, source_device='', pipeline=self.task_pipeline)
         tmp_task.set_file_path(cur_path)
         response = http_request(url=self.processor_address,
                                 method=NetworkAPIMethod.PROCESSOR_PROCESS_RETURN,
@@ -263,7 +260,7 @@ class ChameleonAgent(BaseAgent, abc.ABC):
 
         return fps_mode, skip_frame_interval, remain_frame_interval
 
-    def compress_video(self,frames):
+    def compress_video(self, frames):
         import cv2
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         height, width, _ = frames[0].shape
@@ -284,8 +281,7 @@ class ChameleonAgent(BaseAgent, abc.ABC):
         self.task_pipeline = Task.extract_pipeline_from_dicts(pipeline)
 
         if frame_encoded:
-            self.raw_frames.put(EncodeOps.decode_image(frame_encoded))
-            self.raw_frame_hash_codes.put(frame_hash_code)
+            self.raw_frames.put((EncodeOps.decode_image(frame_encoded), frame_hash_code))
             LOGGER.info('[Fetch Frame] Fetch a frame from generator..')
 
         if not self.best_config_list:
@@ -327,7 +323,6 @@ class ChameleonAgent(BaseAgent, abc.ABC):
             segment_num += 1
 
             self.profiling_frames = self.raw_frames.get_all_without_drop()
-            self.profiling_frame_hash_codes = self.raw_frame_hash_codes.get_all_without_drop()
 
             # 冷启动时， 为初始化的best_num个配置排序
             if segment_num == 1:
