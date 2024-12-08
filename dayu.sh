@@ -85,6 +85,8 @@ spec:
                   value: "$KUBERNETES_SERVICE_PORT"
                 - name: GUNICORN_PORT
                   value: "8000"
+                - name: FILE_PREFIX
+                  value: "$DATASOURCE_DATA_ROOT"
               image: $REGISTRY/$REPOSITORY/datasource:$TAG
               imagePullPolicy: IfNotPresent
               name: datasource
