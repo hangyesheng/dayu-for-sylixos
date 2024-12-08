@@ -194,6 +194,7 @@ class ChameleonAgent(BaseAgent, abc.ABC):
             raise ValueError('No value of "current_analytics" has been set')
         gt_path_prefix = os.path.join(self.acc_gt_dir, self.current_analytics)
         gt_file_path = Context.get_file_path(os.path.join(gt_path_prefix, 'gt_file.txt'))
+        LOGGER.debug(f'[ACC GT] gt file path: {gt_file_path}')
         self.acc_estimator = AccEstimator(gt_file_path)
 
     def process_video(self, resolution, fps):
