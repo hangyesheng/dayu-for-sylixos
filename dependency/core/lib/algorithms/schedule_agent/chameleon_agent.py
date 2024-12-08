@@ -321,8 +321,8 @@ class ChameleonAgent(BaseAgent, abc.ABC):
 
             segment_num += 1
 
-            self.profiling_frames = self.raw_frames.get_all()
-            self.profiling_frame_hash_codes = self.raw_frame_hash_codes.get_all()
+            self.profiling_frames = self.raw_frames.get_all_without_drop()
+            self.profiling_frame_hash_codes = self.raw_frame_hash_codes.get_all_without_drop()
 
             # 冷启动时， 为初始化的best_num个配置排序
             if segment_num == 1:
