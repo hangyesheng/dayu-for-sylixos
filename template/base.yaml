@@ -1,6 +1,6 @@
 namespace: dayu
 log-level: DEBUG
-log-file-name: road_fc_dense_high_1
+log-file-name: road_hei_sparse_high_4
 pod-permission:
   service-account: worker-admin
   cluster-role-binding: worker-admin-binding

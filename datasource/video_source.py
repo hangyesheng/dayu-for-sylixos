@@ -75,13 +75,13 @@ class VideoSource:
             frames_index = list(range(self.frame_count, self.frame_count + buffer_size))
             self.frame_count = frames_index[-1] + 1
 
-        self.frame_count = self.frame_count % self.frame_max_count
-
-        if self.play_mode == 'non-cycle' and frames_index[-1] >= self.frame_max_count - 1:
+        if self.play_mode == 'non-cycle' and self.frame_count >= self.frame_max_count - 1:
             self.is_end = True
             frames_index = [x for x in frames_index if x < self.frame_max_count]
         else:
             frames_index = [x % self.frame_max_count for x in frames_index]
+
+        self.frame_count = self.frame_count % self.frame_max_count
 
         LOGGER.debug(f'frames_index: {frames_index}, max frame: {self.frame_max_count}')
         LOGGER.debug(f'is end: {self.is_end}')
