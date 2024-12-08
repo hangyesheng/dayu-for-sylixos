@@ -75,6 +75,10 @@ class ChameleonAgent(BaseAgent, abc.ABC):
         self.acc_gt_dir = acc_gt_dir
         self.acc_estimator = None
 
+        self.overhead_file = Context.get_file_path(os.path.join('scheduler/chameleon', 'chameleon_overhead.txt'))
+        if os.path.exists(self.overhead_file):
+            FileOps.remove_file(self.overhead_file)
+
     def get_all_knob_combinations(self):
         all_config_list = []
         for resolution in self.resolution_list:
@@ -309,6 +313,8 @@ class ChameleonAgent(BaseAgent, abc.ABC):
 
             end_time = time.time()
             time_cost = end_time - start_time
+            with open(self.overhead_file, 'a') as f:
+                f.write(f'{(end_time - start_time) * 1000}\n')
             LOGGER.info(f'[Chameleon Profile] Profile for time: {time_cost}s')
             LOGGER.info(f'[Config List] Best Config List: {self.best_config_list}')
             if self.segment_size > time_cost:

@@ -16,7 +16,7 @@ pod-template:
     - name: SCH_AGENT_NAME
       value: hei
     - name: SCH_AGENT_PARAMETERS
-      value: "{'window_size':8, 'mode':'inference', 'model_dir':'road_hei_dense_low_train_1', 'load_model':True, 'load_model_episode':11000, 'acc_gt_dir':'acc-gt-sparse'}"
+      value: "{'window_size':8, 'mode':'inference', 'model_dir':'road_hei_dense_low_train_1', 'load_model':True, 'load_model_episode':8000, 'acc_gt_dir':'acc-gt-sparse'}"
 port-open:
   pos: cloud
   port: 9000
