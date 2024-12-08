@@ -67,6 +67,10 @@ class ChameleonAgent(BaseAgent, abc.ABC):
         # 选择配置时所需的最新视频帧,一般数量也就几十帧
         self.raw_frames = Queue(maxsize=30)
         self.raw_frame_hash_codes = Queue(maxsize=30)
+        self.profiling_video_path = 'profiling_video.mp4'
+
+        self.profiling_frames = []
+        self.profiling_frame_hash_codes = []
 
         self.task_pipeline = None
 
@@ -196,9 +200,8 @@ class ChameleonAgent(BaseAgent, abc.ABC):
 
         frame_count = 0
         frame_list = []
-        frames = self.raw_frames.get_all()
-        LOGGER.debug(f'[FRAMES] get frame "raw_frames" num: {len(frames)}')
-        frame_hash_codes = self.raw_frame_hash_codes.get_all()
+        frames = self.profiling_frames.copy()
+        frame_hash_codes = self.profiling_frame_hash_codes.copy()
         for frame in frames:
             frame_count += 1
             if fps_mode == 'skip' and frame_count % skip_frame_interval == 0:
@@ -252,12 +255,11 @@ class ChameleonAgent(BaseAgent, abc.ABC):
 
         return fps_mode, skip_frame_interval, remain_frame_interval
 
-    @staticmethod
-    def compress_video(frames):
+    def compress_video(self,frames):
         import cv2
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         height, width, _ = frames[0].shape
-        video_path = f'temp_{int(time.time())}.mp4'
+        video_path = self.profiling_video_path
         out = cv2.VideoWriter(video_path, fourcc, 30, (width, height))
         for frame in frames:
             out.write(frame)
@@ -308,9 +310,14 @@ class ChameleonAgent(BaseAgent, abc.ABC):
         time.sleep(self.segment_size)
 
         while True:
+            if self.raw_frames.empty():
+                continue
             start_time = time.time()
 
             segment_num += 1
+
+            self.profiling_frames = self.raw_frames.get_all()
+            self.profiling_frame_hash_codes = self.raw_frame_hash_codes.get_all()
 
             # 冷启动时， 为初始化的best_num个配置排序
             if segment_num == 1:
