@@ -203,7 +203,8 @@ class ChameleonAgent(BaseAgent, abc.ABC):
         frames = self.profiling_frames.copy()
         LOGGER.debug(f'[FRAMES] get from profiling frames num: {len(frames)}')
         frame_hash_codes = self.profiling_frame_hash_codes.copy()
-        for frame in frames:
+        new_frame_hash_codes = []
+        for frame, hash_code in zip(frames, frame_hash_codes):
             frame_count += 1
             if fps_mode == 'skip' and frame_count % skip_frame_interval == 0:
                 continue
@@ -212,8 +213,9 @@ class ChameleonAgent(BaseAgent, abc.ABC):
                 continue
             frame = cv2.resize(frame, resolution)
             frame_list.append(frame)
+            new_frame_hash_codes.append(hash_code)
 
-        return frame_list, frame_hash_codes
+        return frame_list, new_frame_hash_codes
 
     def execute_analytics(self, frames):
         if not self.processor_address:
@@ -311,7 +313,9 @@ class ChameleonAgent(BaseAgent, abc.ABC):
         time.sleep(self.segment_size)
 
         while True:
-            if self.raw_frames.empty():
+
+            # profiling frames has a number lower bound
+            if not self.raw_frames.full():
                 continue
             start_time = time.time()
 
