@@ -18,5 +18,6 @@ class ChameleonBSTOperation(BaseBSTOperation, abc.ABC):
         ret, frame = cap.read()
         if ret:
             system.temp_encoded_frame = EncodeOps.encode_image(frame)
+            system.temp_hash_code = hash_codes[0]
         else:
             system.temp_encoded_frame = ''

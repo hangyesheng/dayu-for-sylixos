@@ -2,7 +2,7 @@ import abc
 import os
 
 from core.lib.common import ClassFactory, ClassType, Context, LOGGER, EncodeOps
-from core.lib.common import VideoOps, HashOps, FileNameConstant
+from core.lib.common import VideoOps
 from core.lib.estimation import AccEstimator
 from core.lib.common import Queue, FileOps
 from core.lib.network import NodeInfo, get_merge_address, NetworkAPIPath, NetworkAPIMethod, PortInfo, http_request
@@ -66,6 +66,7 @@ class ChameleonAgent(BaseAgent, abc.ABC):
 
         # 选择配置时所需的最新视频帧,一般数量也就几十帧
         self.raw_frames = Queue(maxsize=30)
+        self.raw_frame_hash_codes = Queue(maxsize=30)
 
         self.current_analytics = ''
 
@@ -166,8 +167,7 @@ class ChameleonAgent(BaseAgent, abc.ABC):
             raw_resolution = VideoOps.text2resolution('1080p')
             resolution = VideoOps.text2resolution(resolution)
             resolution_ratio = (resolution[0] / raw_resolution[0], resolution[1] / raw_resolution[1])
-            frames = self.process_video(resolution, fps)
-            hash_data = [HashOps.get_frame_hash(frame).hash.flatten() for frame in frames]
+            frames, hash_data = self.process_video(resolution, fps)
             results = self.execute_analytics(frames)
             if not self.acc_estimator:
                 self.create_acc_estimator()
@@ -193,6 +193,7 @@ class ChameleonAgent(BaseAgent, abc.ABC):
         frame_count = 0
         frame_list = []
         frames = self.raw_frames.get_all()
+        frame_hash_codes = self.raw_frame_hash_codes.get_all()
         for frame in frames:
             frame_count += 1
             if fps_mode == 'skip' and frame_count % skip_frame_interval == 0:
@@ -203,7 +204,7 @@ class ChameleonAgent(BaseAgent, abc.ABC):
             frame = cv2.resize(frame, resolution)
             frame_list.append(frame)
 
-        return frame_list
+        return frame_list, frame_hash_codes
 
     def execute_analytics(self, frames):
         if not self.processor_address:
@@ -248,7 +249,7 @@ class ChameleonAgent(BaseAgent, abc.ABC):
     @staticmethod
     def compress_video(frames):
         import cv2
-        fourcc = cv2.VideoWriter_fourcc('mp4v')
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         height, width, _ = frames[0].shape
         video_path = f'temp_{int(time.time())}.mp4'
         out = cv2.VideoWriter(video_path, fourcc, 30, (width, height))
@@ -261,8 +262,10 @@ class ChameleonAgent(BaseAgent, abc.ABC):
     def get_schedule_plan(self, info):
 
         frame_encoded = info['frame']
+        frame_hash_code = info['hash_code']
         if frame_encoded:
             self.raw_frames.put(EncodeOps.decode_image(frame_encoded))
+            self.raw_frame_hash_codes.put(frame_hash_code)
             LOGGER.info('[Fetch Frame] Fetch a frame from generator..')
 
         if not self.best_config_list:

@@ -18,7 +18,8 @@ class ChameleonBSOperation(BaseBSOperation, abc.ABC):
                       'meta_data': system.raw_meta_data,
                       'device': system.local_device,
                       'pipeline': Task.extract_dicts_from_pipeline(system.task_pipeline),
-                      'frame': system.temp_encoded_frame
+                      'frame': system.temp_encoded_frame,
+                      'hash_code':system.temp_hash_code
                       }
 
         return parameters
