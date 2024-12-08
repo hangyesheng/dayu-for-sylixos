@@ -68,6 +68,8 @@ class ChameleonAgent(BaseAgent, abc.ABC):
         self.raw_frames = Queue(maxsize=30)
         self.raw_frame_hash_codes = Queue(maxsize=30)
 
+        self.task_pipeline = None
+
         self.current_analytics = ''
 
         # 对F1_score进行排序时用到的阈值
@@ -217,7 +219,7 @@ class ChameleonAgent(BaseAgent, abc.ABC):
 
         cur_path = self.compress_video(frames)
 
-        tmp_task = Task(source_id=0, task_id=0, source_device='')
+        tmp_task = Task(source_id=0, task_id=0, source_device='',pipeline=self.task_pipeline)
         tmp_task.set_file_path(cur_path)
         response = http_request(url=self.processor_address,
                                 method=NetworkAPIMethod.PROCESSOR_PROCESS_RETURN,
@@ -230,7 +232,8 @@ class ChameleonAgent(BaseAgent, abc.ABC):
         if response:
             task = Task.deserialize(response)
             return task.get_content()
-        return None
+        else:
+            return None
 
     @staticmethod
     def get_fps_adjust_mode(fps_raw, fps):
@@ -264,6 +267,10 @@ class ChameleonAgent(BaseAgent, abc.ABC):
 
         frame_encoded = info['frame']
         frame_hash_code = info['hash_code']
+        pipeline = info['pipeline']
+
+        self.task_pipeline = Task.extract_pipeline_from_dicts(pipeline)
+
         if frame_encoded:
             self.raw_frames.put(EncodeOps.decode_image(frame_encoded))
             self.raw_frame_hash_codes.put(frame_hash_code)
