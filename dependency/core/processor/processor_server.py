@@ -63,15 +63,10 @@ class ProcessorServer:
                                      data: str = Form(...)):
         file_data = await file.read()
         cur_task = Task.deserialize(data)
-        backtask.add_task(self.process_return_service_background, data, file_data)
-        LOGGER.debug(f'[Monitor Task] (Process Return Request) '
-                     f'Source: {cur_task.get_source_id()} / Task: {cur_task.get_task_id()} ')
-
-    def process_return_service_background(self, data, file_data):
-
-        cur_task = Task.deserialize(data)
-        LOGGER.info(f'[Process Return Background] Process task: source {cur_task.get_source_id()}  / task {cur_task.get_task_id()}')
+        LOGGER.info(f'[Process Return Background] Process task: source {cur_task.get_source_id()}  / '
+                    f'task {cur_task.get_task_id()}')
         FileOps.save_data_file(cur_task, file_data)
+
         new_task = self.processor(cur_task)
         LOGGER.debug(f'[Processor Return completed] content: {new_task.get_content()}')
         FileOps.remove_data_file(cur_task)
