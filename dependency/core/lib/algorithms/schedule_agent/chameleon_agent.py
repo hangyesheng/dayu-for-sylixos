@@ -170,6 +170,7 @@ class ChameleonAgent(BaseAgent, abc.ABC):
             resolution = VideoOps.text2resolution(resolution)
             resolution_ratio = (resolution[0] / raw_resolution[0], resolution[1] / raw_resolution[1])
             frames, hash_data = self.process_video(resolution, fps)
+            LOGGER.debug(f'[FRAMES] length of frames:{len(frames)}')
             results = self.execute_analytics(frames)
             if not self.acc_estimator:
                 self.create_acc_estimator()
@@ -196,6 +197,7 @@ class ChameleonAgent(BaseAgent, abc.ABC):
         frame_count = 0
         frame_list = []
         frames = self.raw_frames.get_all()
+        LOGGER.debug(f'[FRAMES] get frame "raw_frames" num: {len(frames)}')
         frame_hash_codes = self.raw_frame_hash_codes.get_all()
         for frame in frames:
             frame_count += 1
