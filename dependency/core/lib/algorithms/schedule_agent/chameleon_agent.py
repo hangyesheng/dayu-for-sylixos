@@ -174,6 +174,7 @@ class ChameleonAgent(BaseAgent, abc.ABC):
             acc = self.acc_estimator.calculate_accuracy(hash_data, results, resolution_ratio, fps / 30)
         except Exception as e:
             LOGGER.warning(f'Calculate accuracy failed: {str(e)}')
+            raise e
             acc = 0
         return acc
 
