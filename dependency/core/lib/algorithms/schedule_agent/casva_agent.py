@@ -1,4 +1,5 @@
 import abc
+import math
 import os.path
 import time
 import numpy as np
@@ -119,7 +120,7 @@ class CASVAAgent(BaseAgent, abc.ABC):
         self.latest_policy.update({'resolution': self.resolution_list[resolution_index],
                                    'fps': self.fps_list[fps_index],
                                    'qp': self.qp_list[qp_index],
-                                   'buffer_size': self.fps_list[fps_index] * self.segment_length
+                                   'buffer_size': math.ceil(self.fps_list[fps_index] * self.segment_length)
                                    })
 
         pipe_seg = 0
