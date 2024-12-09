@@ -53,7 +53,7 @@ class HEIDRLAgent(BaseAgent, abc.ABC):
         self.acc_gt_dir = acc_gt_dir
         self.acc_estimator = None
 
-        self.model_dir = Context.get_file_path(os.path.join('scheduler/hei', model_dir, f'agent_{self.agent_id}'))
+        self.model_dir = Context.get_file_path(os.path.join('scheduler/hei-drl', model_dir, f'agent_{self.agent_id}'))
         FileOps.create_directory(self.model_dir)
         if load_model:
             self.drl_agent.load(self.model_dir, load_model_episode)
@@ -68,6 +68,10 @@ class HEIDRLAgent(BaseAgent, abc.ABC):
         self.latest_policy = None
         self.latest_task_delay = None
         self.schedule_plan = None
+
+        self.reward_file = Context.get_file_path(os.path.join('scheduler/hei-drl', 'reward.txt'))
+        if os.path.exists(self.reward_file):
+            FileOps.remove_file(self.reward_file)
 
     def get_drl_state_buffer(self):
         while True:
@@ -170,6 +174,9 @@ class HEIDRLAgent(BaseAgent, abc.ABC):
             reward = min(final_delay * 20, -2)
         else:
             reward = 1 / max(final_delay, 0.5) * 0.3 + final_acc
+
+        with open(self.reward_file, 'a') as f:
+            f.write(f'delay:{final_delay} acc:{final_acc} reward:{reward}\n')
 
         return reward
 
