@@ -104,7 +104,7 @@ class CASVABSTOperation(BaseBSTOperation, abc.ABC):
             out.write(frame)
         out.release()
 
-        self.modify_file_qp(past_metadata, tmp_process_file)
+        # self.modify_file_qp(past_metadata, tmp_process_file)
 
         return tmp_process_file
 
@@ -114,7 +114,7 @@ class CASVABSTOperation(BaseBSTOperation, abc.ABC):
         tmp_data = task.get_tmp_data()
         meta_data = task.get_metadata()
 
-        self.modify_file_qp(meta_data, compressed_file)
+        # self.modify_file_qp(meta_data, compressed_file)
 
         file_size = os.path.getsize(compressed_file)
         tmp_data['file_size'] = file_size

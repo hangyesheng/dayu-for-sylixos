@@ -1,6 +1,6 @@
 namespace: dayu
 log-level: DEBUG
-log-file-name: road_chameleon_dense_low_3
+log-file-name: road_chameleon_dense_low_4
 pod-permission:
   service-account: worker-admin
   cluster-role-binding: worker-admin-binding

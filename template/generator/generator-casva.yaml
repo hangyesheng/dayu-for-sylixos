@@ -7,6 +7,8 @@ pod-template:
       value: simple
     - name: GEN_GETTER_FILTER_NAME
       value: casva
+    - name: GEN_GETTER_FILTER_PARAMETERS
+      value: "{'data_coming_interval':20}"
     - name: GEN_PROCESS_NAME
       value: simple
     - name: GEN_COMPRESS_NAME
