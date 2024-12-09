@@ -3,7 +3,7 @@ import time
 
 from .base_getter_filter import BaseDataGetterFilter
 
-from core.lib.common import ClassFactory, ClassType
+from core.lib.common import ClassFactory, ClassType, LOGGER
 
 __all__ = ('CASVADataGetterFilter',)
 
@@ -22,6 +22,7 @@ class CASVADataGetterFilter(BaseDataGetterFilter, abc.ABC):
         data_coming_interval = 2
         record_time = time.time()
         if self.latest_time > 0 and record_time - self.latest_time > data_coming_interval:
+            LOGGER.debug(f'[Getter Filter] delay time: {record_time-self.latest_time}')
             self.skip_count += 1
             self.latest_time = record_time
             return False

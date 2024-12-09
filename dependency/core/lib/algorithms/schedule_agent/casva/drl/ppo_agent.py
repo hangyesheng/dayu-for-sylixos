@@ -10,6 +10,7 @@ from .network import Actor, Critic
 __all__ = ('DualClippedPPO',)
 
 
+# TODO: modify real PPO architecture (currently is soft actor-critic architecture)
 class DualClippedPPO(object):
     def __init__(
             self,
