@@ -93,6 +93,10 @@ class CASVAAgent(BaseAgent, abc.ABC):
         if os.path.exists(self.overhead_file):
             FileOps.remove_file(self.overhead_file)
 
+        self.reward_file = Context.get_file_path(os.path.join('scheduler/casva', 'reward.txt'))
+        if os.path.exists(self.reward_file):
+            FileOps.remove_file(self.reward_file)
+
     def get_drl_state_buffer(self):
         while True:
             state, evaluation_info = self.state_buffer.get_state_buffer()
@@ -196,7 +200,8 @@ class CASVAAgent(BaseAgent, abc.ABC):
             reward = (5 * final_acc - 1 * max(final_transmit_delay - self.segment_length, 0) / self.segment_length
                       - 1 * self.latest_skip_count)
 
-            LOGGER.info(f'[CASVA Reward Computing] (latency first)')
+            LOGGER.info(f'[CASVA Reward Computing] (latency first) '
+                        f'acc:{final_acc:.4f}, delay:{final_transmit_delay:.4f} ,reward:{reward:.4f}')
         elif self.streaming_mode == 'delivery_first':
             reward = (2 * final_acc - 3 * max(final_transmit_delay - self.segment_length, 0) / self.segment_length
                       + ((final_buffer_size - self.past_buffer_size_value) / self.segment_length
@@ -204,9 +209,13 @@ class CASVAAgent(BaseAgent, abc.ABC):
 
             self.past_buffer_size_value = final_buffer_size
 
-            LOGGER.info(f'[CASVA Reward Computing] (delivery first)')
+            LOGGER.info(f'[CASVA Reward Computing] (delivery first) '
+                        f'acc:{final_acc:.4f}, delay:{final_transmit_delay:.4f} ,reward:{reward:.4f}')
         else:
             raise ValueError('"streaming_mode" must be "latency_first" or "delivery_first"')
+
+        with open(self.reward_file, 'a') as f:
+            f.write(f'dacc:{final_acc:.4f}, delay:{final_transmit_delay:.4f} ,reward:{reward:.4f}')
 
         return reward
 
