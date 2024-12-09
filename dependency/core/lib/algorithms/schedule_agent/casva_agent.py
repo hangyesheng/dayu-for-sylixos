@@ -113,6 +113,9 @@ class CASVAAgent(BaseAgent, abc.ABC):
         resolution_index = int((action[0] + 1) / 2 * len(self.resolution_list))
         fps_index = int((action[1] + 1) / 2 * len(self.fps_list))
         qp_index = int((action[2] + 1) / 2 * len(self.qp_list))
+        LOGGER.debug(f'[Map Action] fps_list: {self.fps_list}')
+        LOGGER.debug(f'[Map Action] fps_index: {fps_index}')
+        LOGGER.debug(f'[Map Action] action[1]: {action[1]}]')
         self.latest_policy.update({'resolution': self.resolution_list[resolution_index],
                                    'fps': self.fps_list[fps_index],
                                    'qp': self.qp_list[qp_index],
