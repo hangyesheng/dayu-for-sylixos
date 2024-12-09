@@ -22,6 +22,4 @@ port-open:
   port: 9000
 file-mount:
   - pos: cloud
-    path: 'scheduler/hei/'
-  - pos: cloud
-    path: 'acc-gt/'
+    path: 'scheduler/hei-nf/'
