@@ -71,6 +71,10 @@ class DualClippedPPO(object):
             # Get next state action using actor network
             a_prime, log_pi_a_prime = self.actor(s_prime)
             target_value = self.critic_target(s_prime, a_prime)
+            print("r:", r.shape, r.dtype)
+            print("done_mask:", done_mask.shape, done_mask.dtype)
+            print("target_value:", target_value.shape, target_value.dtype)
+            print("gamma:", type(self.gamma), self.gamma)
             target_value = r + (1 - done_mask) * self.gamma * target_value
 
         # ---------------------------- Update Critic (Value Function) ----------------------------- #
