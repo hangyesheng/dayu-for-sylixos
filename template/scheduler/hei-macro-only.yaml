@@ -4,7 +4,7 @@ pod-template:
   imagePullPolicy: IfNotPresent
   env:
     - name: SCH_CONFIG_NAME
-      value: hei
+      value: hei_drl
     - name: SCH_CONFIG_PARAMETERS
       value: "{'hei_drl_config':'drl_parameters.yaml', 'hei_hyper_config':'hyper_parameters.yaml'}"
     - name: SCH_SCENARIO_NAME

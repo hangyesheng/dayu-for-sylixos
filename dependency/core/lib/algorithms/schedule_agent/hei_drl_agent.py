@@ -69,6 +69,9 @@ class HEIDRLAgent(BaseAgent, abc.ABC):
         self.latest_task_delay = None
         self.schedule_plan = None
 
+        self.cloud_device = self.system.cloud_device
+        self.edge_device = None
+
         self.reward_file = Context.get_file_path(os.path.join('scheduler/hei-drl', 'reward.txt'))
         if os.path.exists(self.reward_file):
             FileOps.remove_file(self.reward_file)
@@ -105,8 +108,9 @@ class HEIDRLAgent(BaseAgent, abc.ABC):
                                    'buffer_size': self.buffer_size_list[buffer_size], })
 
         pipeline = self.latest_policy['pipeline']
-        pipeline = [{**p, 'execute_device': 'edge1'} for p in pipeline[:pipe_seg]] + \
-                   [{**p, 'execute_device': 'cloud.kubeedge'} for p in pipeline[pipe_seg:]]
+        if self.edge_device:
+            pipeline = [{**p, 'execute_device': self.edge_device} for p in pipeline[:pipe_seg]] + \
+                       [{**p, 'execute_device': self.cloud_device} for p in pipeline[pipe_seg:]]
         self.latest_policy.update({'pipeline': pipeline})
         self.schedule_plan = self.latest_policy.copy()
 
@@ -257,6 +261,7 @@ class HEIDRLAgent(BaseAgent, abc.ABC):
         self.latest_policy = policy
 
     def get_schedule_plan(self, info):
+        self.edge_device = info['device']
         return self.schedule_plan
 
     def run(self):
