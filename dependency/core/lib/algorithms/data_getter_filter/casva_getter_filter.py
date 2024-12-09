@@ -19,9 +19,9 @@ class CASVADataGetterFilter(BaseDataGetterFilter, abc.ABC):
         self.skip_count = 0
 
     def __call__(self, system):
-        data_coming_interval = 1 / system.meta_data['fps'] * system.meta_data['buffer_size']
+        data_coming_interval = 2
         record_time = time.time()
-        if self.latest_time > 0 and record_time - self.latest_time>data_coming_interval:
+        if self.latest_time > 0 and record_time - self.latest_time > data_coming_interval:
             self.skip_count += 1
             self.latest_time = record_time
             return False
