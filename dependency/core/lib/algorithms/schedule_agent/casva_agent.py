@@ -215,7 +215,7 @@ class CASVAAgent(BaseAgent, abc.ABC):
             raise ValueError('"streaming_mode" must be "latency_first" or "delivery_first"')
 
         with open(self.reward_file, 'a') as f:
-            f.write(f'dacc:{final_acc:.4f}, delay:{final_transmit_delay:.4f} ,reward:{reward:.4f}')
+            f.write(f'dacc:{final_acc:.4f}, delay:{final_transmit_delay:.4f} ,reward:{reward:.4f}\n')
 
         return reward
 
