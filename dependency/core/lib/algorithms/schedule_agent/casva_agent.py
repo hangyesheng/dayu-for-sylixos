@@ -267,6 +267,7 @@ class CASVAAgent(BaseAgent, abc.ABC):
             self.state_buffer.add_scenario_buffer([task_delay, buffer_size, segment_size, content_dynamics])
         except Exception as e:
             LOGGER.warning(f'Wrong scenario from Distributor: {str(e)}')
+            raise e
 
     def update_resource(self, device, resource):
         bandwidth = resource['bandwidth']
