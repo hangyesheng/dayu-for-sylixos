@@ -264,7 +264,12 @@ class CASVAAgent(BaseAgent, abc.ABC):
             segment_size = scenario["segment_size"]
             content_dynamics = scenario["content_dynamics"]
 
-            self.state_buffer.add_scenario_buffer([task_delay, buffer_size, segment_size, content_dynamics])
+            self.state_buffer.add_scenario_buffer(
+                {'delay': task_delay,
+                 'buffer_size': buffer_size,
+                 'segment_size': segment_size,
+                 'content_dynamics': content_dynamics})
+
         except Exception as e:
             LOGGER.warning(f'Wrong scenario from Distributor: {str(e)}')
             raise e
