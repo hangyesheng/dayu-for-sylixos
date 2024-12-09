@@ -22,6 +22,6 @@ port-open:
   port: 9000
 file-mount:
   - pos: cloud
-    path: 'scheduler/hei-macro/'
+    path: 'scheduler/hei-drl/'
   - pos: cloud
     path: 'acc-gt-dense/'
