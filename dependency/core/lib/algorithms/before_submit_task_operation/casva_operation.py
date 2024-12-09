@@ -97,6 +97,13 @@ class CASVABSTOperation(BaseBSTOperation, abc.ABC):
 
         tmp_process_file = 'dynamic_tmp.mp4'
 
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        height, width, _ = frame_list[0].shape
+        out = cv2.VideoWriter(tmp_process_file, fourcc, 30, (width, height))
+        for frame in frame_list:
+            out.write(frame)
+        out.release()
+
         self.modify_file_qp(past_metadata, tmp_process_file)
 
         return tmp_process_file
