@@ -278,7 +278,7 @@ class CASVAAgent(BaseAgent, abc.ABC):
 
         resolution_decision = self.system.resolution_list.index(policy['resolution'])
         fps_decision = self.system.fps_list.index(policy['fps'])
-        qp_decision = self.system.qp_list.index(policy['qp_size'])
+        qp_decision = self.system.qp_list.index(policy['qp'])
 
         self.state_buffer.add_decision_buffer([resolution_decision, fps_decision,
                                                qp_decision])
