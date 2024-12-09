@@ -82,31 +82,39 @@ class CASVABSTOperation(BaseBSTOperation, abc.ABC):
         return fps_mode, skip_frame_interval, remain_frame_interval
 
     def reprocess_data(self, compressed_file, meta_data, past_metadata):
-        import cv2
-        cap = cv2.VideoCapture(compressed_file)
-        frame_list = []
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
-
-            if self.filter_frame(meta_data['fps'], past_metadata['fps']):
-                resolution = VideoOps.text2resolution(past_metadata['resolution'])
-                frame = cv2.resize(frame, resolution)
-                frame_list.append(frame)
-
-        tmp_process_file = 'dynamic_tmp.mp4'
-
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        height, width, _ = frame_list[0].shape
-        out = cv2.VideoWriter(tmp_process_file, fourcc, 30, (width, height))
-        for frame in frame_list:
-            out.write(frame)
-        out.release()
+        # import cv2
+        # cap = cv2.VideoCapture(compressed_file)
+        # frame_list = []
+        # while True:
+        #     ret, frame = cap.read()
+        #     if not ret:
+        #         break
+        #
+        #     if self.filter_frame(meta_data['fps'], past_metadata['fps']):
+        #         resolution = VideoOps.text2resolution(past_metadata['resolution'])
+        #         frame = cv2.resize(frame, resolution)
+        #         frame_list.append(frame)
+        #
+        # tmp_process_file = 'dynamic_tmp.mp4'
+        #
+        # fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        # height, width, _ = frame_list[0].shape
+        # out = cv2.VideoWriter(tmp_process_file, fourcc, 30, (width, height))
+        # for frame in frame_list:
+        #     out.write(frame)
+        # out.release()
 
         # self.modify_file_qp(past_metadata, tmp_process_file)
 
-        return tmp_process_file
+        # return os.path.getsize(tmp_process_file)
+
+        raw_size = os.path.getsize(compressed_file)
+        raw_resolution = VideoOps.text2resolution(meta_data['resolution'])
+        resolution = VideoOps.text2resolution(past_metadata['resolution'])
+        raw_fps = meta_data['fps']
+        fps = past_metadata['fps']
+
+        return raw_size * (resolution[0] / raw_resolution[0]) * (fps / raw_fps)
 
     def __call__(self, system, compressed_file, hash_codes):
         task = system.current_task
@@ -116,12 +124,12 @@ class CASVABSTOperation(BaseBSTOperation, abc.ABC):
 
         # self.modify_file_qp(meta_data, compressed_file)
 
-        file_size = os.path.getsize(compressed_file)
+        file_size = os.path.getsize(compressed_file) / 1024 / 1024
         tmp_data['file_size'] = file_size
 
         if hasattr(system, 'past_metadata') and hasattr(system, 'past_file_size'):
-            file_size_with_last_config = os.path.getsize(
-                self.reprocess_data(compressed_file, meta_data, system.past_metadata))
+            file_size_with_last_config = self.reprocess_data(compressed_file, meta_data,
+                                                             system.past_metadata) / 1024 / 1024
             tmp_data['file_dynamics'] = (file_size_with_last_config - system.past_file_size) / system.past_file_size
         else:
             tmp_data['file_dynamics'] = 0
