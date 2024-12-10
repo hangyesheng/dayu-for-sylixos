@@ -89,7 +89,7 @@ class CEVASAgent(BaseAgent, abc.ABC):
 
     def run(self):
         while True:
-
+            time.sleep(1)
             if len(self.data_time_sequence) == 0:
                 LOGGER.info('[No Sequence data] Waiting...')
                 continue
