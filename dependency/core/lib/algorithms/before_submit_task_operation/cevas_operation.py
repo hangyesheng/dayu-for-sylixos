@@ -21,6 +21,6 @@ class CEVASBSTOperation(BaseBSTOperation, abc.ABC):
         task = system.current_task
         tmp_data = task.get_tmp_data()
 
-        file_size = os.path.getsize(compressed_file)
+        file_size = os.path.getsize(compressed_file)/1024/1024
         tmp_data['file_size'] = file_size
         task.set_tmp_data(tmp_data)
