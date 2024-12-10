@@ -1,14 +1,12 @@
 import abc
 import time
 
-
 import numpy as np
 import os
 
 from core.lib.common import ClassFactory, ClassType, Context, Queue, LOGGER, FileOps
 
 from .base_agent import BaseAgent
-
 
 __all__ = ('CEVASAgent',)
 
@@ -99,7 +97,7 @@ class CEVASAgent(BaseAgent, abc.ABC):
             start_time = time.time()
             # 在t时隙获得t+1时隙单个流水线的最佳分割点
             # 获得t+1时隙相关输入信息
-            schedule_info = self.get_pipeline_cpu_memory(self.time_index,self.time_slot)
+            schedule_info = self.get_pipeline_cpu_memory(self.time_index, self.time_slot)
             LOGGER.debug(f'[CEVAS schedule info] schedule info: {schedule_info}')
 
             # 信息顺序为 边缘节点CPU限制 / 内存限制 / 每个节点输入数据量大小 / 云开销
@@ -108,11 +106,12 @@ class CEVASAgent(BaseAgent, abc.ABC):
             # 优化目标 target=min (a * P * x + b * D * x)
             target = 0
             target_idx = -1
+
             for idx, item in enumerate(schedule_info):
                 # 查询前序开销
                 P = 0
                 D = item[2]
-                for idx2, item2 in enumerate(schedule_info[:idx]):
+                for idx2, item2 in enumerate(schedule_info[idx:]):
                     P += item2[3]
                 temp_target = self.optimize_target(P, D)
                 if temp_target < target:
