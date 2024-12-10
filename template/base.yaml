@@ -1,6 +1,6 @@
 namespace: dayu
 log-level: DEBUG
-log-file-name: street_chameleon_dense_low_5
+log-file-name: street_chameleon_dense_low_test
 pod-permission:
   service-account: worker-admin
   cluster-role-binding: worker-admin-binding
@@ -78,7 +78,7 @@ scheduler-policies:
     name: CEVAS
     yaml: cevas.yaml
     dependency:
-      generator: generator-base.yaml
+      generator: generator-cevas.yaml
       controller: controller-nondisplay.yaml
       distributor: distributor-base.yaml
       monitor: monitor-base.yaml

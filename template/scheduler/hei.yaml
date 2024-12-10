@@ -16,7 +16,7 @@ pod-template:
     - name: SCH_AGENT_NAME
       value: hei
     - name: SCH_AGENT_PARAMETERS
-      value: "{'window_size':8, 'mode':'inference', 'model_dir':'street_hei_dense_low_train_1', 'load_model':True, 'load_model_episode':11000, 'acc_gt_dir':'acc-gt-sparse'}"
+      value: "{'window_size':8, 'mode':'inference', 'model_dir':'street_hei_dense_low_train_1', 'load_model':True, 'load_model_episode':11000, 'acc_gt_dir':'acc-gt-dense'}"
 port-open:
   pos: cloud
   port: 9000
@@ -24,4 +24,4 @@ file-mount:
   - pos: cloud
     path: 'scheduler/hei/'
   - pos: cloud
-    path: 'acc-gt-sparse/'
+    path: 'acc-gt-dense/'
