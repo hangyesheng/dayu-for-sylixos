@@ -108,11 +108,11 @@ class CEVASAgent(BaseAgent, abc.ABC):
             # 优化目标 target=min (a * P * x + b * D * x)
             target = 0
             target_idx = -1
-            for idx, item in schedule_info:
+            for idx, item in enumerate(schedule_info):
                 # 查询前序开销
                 P = 0
                 D = item[2]
-                for idx2, item2 in schedule_info[:idx]:
+                for idx2, item2 in enumerate(schedule_info[:idx]):
                     P += item2[3]
                 temp_target = self.optimize_target(P, D)
                 if temp_target < target:
