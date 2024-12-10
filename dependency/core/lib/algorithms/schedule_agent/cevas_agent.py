@@ -100,6 +100,7 @@ class CEVASAgent(BaseAgent, abc.ABC):
             # 在t时隙获得t+1时隙单个流水线的最佳分割点
             # 获得t+1时隙相关输入信息
             schedule_info = self.get_pipeline_cpu_memory(self.time_index,self.time_slot)
+            LOGGER.debug(f'[CEVAS schedule info] schedule info: {schedule_info}')
 
             # 信息顺序为 边缘节点CPU限制 / 内存限制 / 每个节点输入数据量大小 / 云开销
             # 解空间比较小,遍历获得结果即可
