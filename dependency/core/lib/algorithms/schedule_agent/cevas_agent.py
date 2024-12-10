@@ -1,7 +1,7 @@
 import abc
 import time
 
-import torch
+
 import numpy as np
 import os
 
@@ -17,6 +17,7 @@ __all__ = ('CEVASAgent',)
 class CEVASAgent(BaseAgent, abc.ABC):
 
     def __init__(self, system, agent_id: int, fixed_policy: dict = None, time_slot: int = 3):
+        import torch
         self.agent_id = agent_id
         self.cloud_device = system.cloud_device
         self.fixed_policy = fixed_policy
@@ -38,6 +39,7 @@ class CEVASAgent(BaseAgent, abc.ABC):
         # 文件大小
         self.data_time_sequence = []
         self.time_index = 0
+        self.time_slot = time_slot
 
     def get_schedule_plan(self, info):
         if self.fixed_policy is None:
@@ -62,6 +64,7 @@ class CEVASAgent(BaseAgent, abc.ABC):
 
     # 获取流水线每个逻辑节点在t+1时隙边缘节点上的CPU/内存/输入数据大小/云端执行成本
     def get_pipeline_cpu_memory(self, index, time_slot=3):
+        import torch
         # {
         #       edge_CPU:
         #       edge_memory:
@@ -95,7 +98,7 @@ class CEVASAgent(BaseAgent, abc.ABC):
             start_time = time.time()
             # 在t时隙获得t+1时隙单个流水线的最佳分割点
             # 获得t+1时隙相关输入信息
-            schedule_info = self.get_pipeline_cpu_memory(self.time_index)
+            schedule_info = self.get_pipeline_cpu_memory(self.time_index,self.time_slot)
 
             # 信息顺序为 边缘节点CPU限制 / 内存限制 / 每个节点输入数据量大小 / 云开销
             # 解空间比较小,遍历获得结果即可
