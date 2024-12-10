@@ -56,10 +56,10 @@ class CEVASAgent(BaseAgent, abc.ABC):
         return policy
 
     # 最优化目标
-    def optimize_target(self, cloud_cost, node_data):
+    def optimize_target(self,strategy):
         a = 0.1
         b = 0.2
-        return a * cloud_cost + b * node_data
+        return a * strategy[0] + b * strategy[1]
 
     # 获取流水线每个逻辑节点在t+1时隙边缘节点上的CPU/内存/输入数据大小/云端执行成本
     def get_pipeline_cpu_memory(self, index, time_slot=3):
@@ -106,18 +106,23 @@ class CEVASAgent(BaseAgent, abc.ABC):
             # 优化目标 target=min (a * P * x + b * D * x)
             target = 0
             target_idx = -1
+            P = schedule_info[3]
+            D = schedule_info[2]
+            edge_strategy=[D,0]
+            cloud_strategy=[0,P]
 
-            for idx, item in enumerate(schedule_info):
-                # 查询前序开销
-                P = 0
-                D = item[2]
-                for idx2, item2 in enumerate(schedule_info[idx:]):
-                    P += item2[3]
-                temp_target = self.optimize_target(P, D)
-                if temp_target < target:
-                    target = temp_target
-                    target_idx = idx
+            target1 = self.optimize_target(edge_strategy)
+            target2 = self.optimize_target(cloud_strategy)
+            # for idx, item in enumerate(schedule_info):
+            #     # 查询前序开销
+            #
+            #     for idx2, item2 in enumerate(schedule_info[idx:]):
+            #         P += item2[3]
 
+            if target1 > target2:
+                target_idx = 0
+            else:
+                target_idx = 1
             end_time = time.time()
             with open(self.overhead_file, 'a') as f:
                 f.write(f'{(end_time - start_time) * 1000}\n')
