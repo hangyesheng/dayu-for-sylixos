@@ -8,7 +8,7 @@ import os
 from core.lib.common import ClassFactory, ClassType, Context, Queue, LOGGER, FileOps
 
 from .base_agent import BaseAgent
-from .cevas.mlp import MLP
+
 
 __all__ = ('CEVASAgent',)
 
@@ -18,6 +18,7 @@ class CEVASAgent(BaseAgent, abc.ABC):
 
     def __init__(self, system, agent_id: int, fixed_policy: dict = None, time_slot: int = 3):
         import torch
+        from .cevas.mlp import MLP
         self.agent_id = agent_id
         self.cloud_device = system.cloud_device
         self.fixed_policy = fixed_policy

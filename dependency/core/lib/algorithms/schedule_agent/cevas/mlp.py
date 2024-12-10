@@ -1,11 +1,10 @@
-
 import torch.nn as nn
-
 
 
 # 输入t-1到t-h时间段内AOPF/每个逻辑节点的数据输入量
 # 输出预测结果,t+1时刻的各个逻辑节点:数据输入大小/边缘节点资源需求/云开销
 class MLP(nn.Module):
+
     def __init__(self, logic_node_num=3):
         super(MLP, self).__init__()
         self.time_slot = 3
