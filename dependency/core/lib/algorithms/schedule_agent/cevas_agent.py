@@ -8,7 +8,7 @@ import os
 from core.lib.common import ClassFactory, ClassType, Context, Queue, LOGGER, FileOps
 
 from .base_agent import BaseAgent
-from .cevas import MLP
+from .cevas.mlp import MLP
 
 __all__ = ('CEVASAgent',)
 
