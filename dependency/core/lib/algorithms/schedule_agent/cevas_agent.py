@@ -1,9 +1,11 @@
 import abc
+import time
 
 import torch
 import numpy as np
+import os
 
-from core.lib.common import ClassFactory, ClassType, Context, Queue, LOGGER
+from core.lib.common import ClassFactory, ClassType, Context, Queue, LOGGER, FileOps
 
 from .base_agent import BaseAgent
 from .cevas import MLP
@@ -27,6 +29,10 @@ class CEVASAgent(BaseAgent, abc.ABC):
         self.model = MLP(logic_node_num=logic_node_num).to(self.device)
         self.model.load_state_dict(torch.load(model_path, map_location=self.device))
         self.model.eval()  # 设置为评估模式
+
+        self.overhead_file = Context.get_file_path(os.path.join('scheduler/cevas', 'cevas_overhead.txt'))
+        if os.path.exists(self.overhead_file):
+            FileOps.remove_file(self.overhead_file)
 
         # 目标数量（平均值）
         # 文件大小
@@ -86,6 +92,7 @@ class CEVASAgent(BaseAgent, abc.ABC):
                 LOGGER.info('[No Sequence data] Waiting...')
                 continue
 
+            start_time = time.time()
             # 在t时隙获得t+1时隙单个流水线的最佳分割点
             # 获得t+1时隙相关输入信息
             schedule_info = self.get_pipeline_cpu_memory(self.time_index)
@@ -106,6 +113,11 @@ class CEVASAgent(BaseAgent, abc.ABC):
                 if temp_target < target:
                     target = temp_target
                     target_idx = idx
+
+            end_time = time.time()
+            with open(self.overhead_file, 'a') as f:
+                f.write(f'{(end_time - start_time) * 1000}\n')
+
             if target_idx != -1:
                 raw_seg = self.pipe_seg
                 self.pipe_seg = target_idx
@@ -129,4 +141,3 @@ class CEVASAgent(BaseAgent, abc.ABC):
         avg_num = np.mean(task.get_scenario_data()['obj_num'])
         file_size = task.get_tmp_data()['file_size']
         self.data_time_sequence.append([avg_num, file_size])
-
