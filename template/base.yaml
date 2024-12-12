@@ -1,4 +1,4 @@
-namespace: dayu-csy
+namespace: dayu
 log-level: DEBUG
 log-file-name:
 pod-permission:
@@ -11,7 +11,7 @@ default-image-meta:
   registry: repo:5000
   repository: dayuhub
   tag: v1.0
-default-file-mount-prefix: "/data/csy/dayu-files"
+default-file-mount-prefix: "/data/dayu-files"
 datasource:
   use-simulation: true
   node: edgex1
