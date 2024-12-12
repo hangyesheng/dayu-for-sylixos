@@ -1,6 +1,6 @@
-namespace: dayu
+namespace: dayu-csy
 log-level: DEBUG
-log-file-name: road_cevas_sparse_high_1
+log-file-name:
 pod-permission:
   service-account: worker-admin
   cluster-role-binding: worker-admin-binding
@@ -11,11 +11,11 @@ default-image-meta:
   registry: repo:5000
   repository: dayuhub
   tag: v1.0
-default-file-mount-prefix: "/data/dayu-files"
+default-file-mount-prefix: "/data/csy/dayu-files"
 datasource:
   use-simulation: true
   node: edgex1
-  data-root: "/data/datasource-evaluation/"
+  data-root: "/data/datasource/"
   play-mode: non-cycle
 scheduler-policies:
   - id: fixed
