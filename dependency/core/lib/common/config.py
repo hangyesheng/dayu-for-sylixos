@@ -42,7 +42,7 @@ class Context:
             IndexError: If `file_path` is an integer but out of the valid volume index range.
         """
         volume_num = cls.get_parameter('VOLUME_NUM', direct=False)
-        file_prefix = os.path.normpath(cls.get_parameter('FILE_PREFIX'))
+        file_prefix = os.path.normpath(cls.get_parameter('FILE_PREFIX', ''))
         mount_prefix = os.path.normpath(cls.parameters.get('DATA_PATH_PREFIX', '/home/data'))
 
         # if input file path is integer, return corresponding volume path (volume0)
