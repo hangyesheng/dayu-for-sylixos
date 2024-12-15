@@ -101,7 +101,7 @@ services:
   - id: car-detection-pure
     service: car-detection
     name: car detection (only detection)
-    description: car detection (only detection)
+    description: car detection pure (only detection)
     input: frame
     output: bbox
     yaml: car-detection-pure.yaml
@@ -115,7 +115,7 @@ services:
   - id: face-detection-pure
     service: face-detection
     name: face detection (only detection)
-    description: face detection (only detection)
+    description: face detection pure (only detection)
     input: frame
     output: bbox
     yaml: face-detection-pure.yaml

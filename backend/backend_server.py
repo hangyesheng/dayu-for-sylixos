@@ -448,6 +448,7 @@ class BackendServer:
             yaml = self.server.parse_apply_templates(policy, source_deploy)
         except Exception as e:
             LOGGER.warning(f'Parse templates failed: {str(e)}')
+            LOGGER.exception(e)
             yaml = None
         try:
             result = install_loop(yaml)
