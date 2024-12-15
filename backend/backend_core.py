@@ -70,7 +70,7 @@ class BackendCore:
 
         yaml_dict.update(self.template_helper.load_policy_apply_yaml(policy))
 
-        service_dict = self.extract_service_from_source_deployment(source_deploy)
+        service_dict, source_deploy = self.extract_service_from_source_deployment(source_deploy)
         yaml_dict.update({'processor': self.template_helper.load_application_apply_yaml(service_dict)})
 
         docs_list = self.template_helper.finetune_yaml_parameters(yaml_dict, source_deploy)
@@ -86,16 +86,18 @@ class BackendCore:
         for s in source_deploy:
             pipeline = s['pipeline']
             node = s['node']
+            extracted_pipeline = []
             for service_id in pipeline:
                 service = self.find_service_by_id(service_id)
                 service_name = service['service']
                 service_yaml = service['yaml']
+                extracted_pipeline.append(service)
                 if service_id in service_dict:
                     service_dict[service_id]['node'].append(node)
                 else:
                     service_dict[service_id] = {'service_name': service_name, 'yaml': service_yaml, 'node': [node]}
-
-        return service_dict
+            s['pipeline'] = extracted_pipeline
+        return service_dict, source_deploy
 
     def get_yaml_docs(self):
         if self.cur_yaml_docs:

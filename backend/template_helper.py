@@ -170,7 +170,7 @@ class TemplateHelper:
                     {'name': 'SOURCE_TYPE', 'value': str(source['source_type'])},
                     {'name': 'SOURCE_ID', 'value': str(source['id'])},
                     {'name': 'SOURCE_METADATA', 'value': str(source['metadata'])},
-                    {'name': 'PIPELINE', 'value': str([{'service_name': service} for service in pipeline])},
+                    {'name': 'PIPELINE', 'value': str([{'service_name': service['service']} for service in pipeline])},
 
                 ])
 
