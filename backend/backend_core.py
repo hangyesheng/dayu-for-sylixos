@@ -85,14 +85,15 @@ class BackendCore:
 
         for s in source_deploy:
             pipeline = s['pipeline']
-            service_name = s['service']
             node = s['node']
             for service_id in pipeline:
                 service = self.find_service_by_id(service_id)
+                service_name = service['service']
+                service_yaml = service['yaml']
                 if service_id in service_dict:
                     service_dict[service_id]['node'].append(node)
                 else:
-                    service_dict[service_id] = {'service_name': service_name, 'yaml': service['yaml'], 'node': [node]}
+                    service_dict[service_id] = {'service_name': service_name, 'yaml': service_yaml, 'node': [node]}
 
         return service_dict
 
