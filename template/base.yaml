@@ -92,36 +92,42 @@ scheduler-policies:
       monitor: monitor-base.yaml
 services:
   - id: car-detection
+    service: car-detection
     name: car detection
-    description: car detection
+    description: car detection (detection + tracking)
     input: frame
     output: bbox
     yaml: car-detection.yaml
-  - id: car-detection
+  - id: car-detection-pure
+    service: car-detection
     name: car detection (only detection)
-    description: car detection
+    description: car detection (only detection)
     input: frame
     output: bbox
     yaml: car-detection-pure.yaml
   - id: face-detection
+    service: face-detection
     name: face detection
-    description: face detection
+    description: face detection (detection + tracking)
     input: frame
     output: bbox
     yaml: face-detection.yaml
-  - id: face-detection
+  - id: face-detection-pure
+    service: face-detection
     name: face detection (only detection)
-    description: face detection
+    description: face detection (only detection)
     input: frame
     output: bbox
     yaml: face-detection-pure.yaml
   - id: gender-classification
+    service: gender-classification
     name: gender classification
     description: gender classification
     input: bbox
     output: text
     yaml: gender-classification.yaml
   - id: age-classification
+    service: age-classification
     name: age classification
     description: age classification
     input: bbox

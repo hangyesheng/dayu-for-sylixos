@@ -261,7 +261,8 @@ class TemplateHelper:
         yaml_docs = []
         for index, service_id in enumerate(service_dict):
             yaml_doc = service_dict[service_id]['service']
-            yaml_doc = self.fill_template(yaml_doc, f'processor-{service_id}')
+            service_name = yaml_doc['service_name']
+            yaml_doc = self.fill_template(yaml_doc, f'processor-{service_name}')
 
             edge_nodes = service_dict[service_id]['node']
 
