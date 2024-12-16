@@ -3,11 +3,17 @@ import json
 
 class Service:
     def __init__(self, service_name, execute_device='',
-                 transmit_time=0, execute_time=0):
+                 transmit_time=0, execute_time=0, real_execute_time=0):
         self.__service_name = service_name
         self.__execute_device = execute_device
         self.__transmit_time = transmit_time
+
+        # execute_time means duration of service execution from controller to controller
+        # includes waiting time in queue and other system costs
         self.__execute_time = execute_time
+
+        # real_execute_time only includes real execute time of service in processor
+        self.__real_execute_time = real_execute_time
 
     def get_service_name(self):
         return self.__service_name
@@ -29,11 +35,19 @@ class Service:
         assert execute_time >= 0, f'execute time of service "{self.__service_name}" is negative: {execute_time}!'
         self.__execute_time = execute_time
 
+    def set_real_execute_time(self, real_execute_time):
+        assert real_execute_time >= 0, \
+            f' real execute time of service "{self.__service_name}" is negative: {real_execute_time}!'
+        self.__real_execute_time = real_execute_time
+
     def get_transmit_time(self):
         return self.__transmit_time
 
     def get_execute_time(self):
         return self.__execute_time
+
+    def get_real_execute_time(self):
+        return self.__real_execute_time
 
     def get_service_total_time(self):
         return self.__transmit_time + self.__execute_time
@@ -44,7 +58,8 @@ class Service:
             'service_name': service.get_service_name(),
             'execute_device': service.get_execute_device(),
             'execute_data': {'transmit_time': service.get_transmit_time(),
-                             'execute_time': service.get_execute_time()}
+                             'execute_time': service.get_execute_time(),
+                             'real_execute_time': service.get_real_execute_time()},
         })
 
     @staticmethod
@@ -52,5 +67,6 @@ class Service:
         data = json.loads(data)
         service = Service(data['service_name'], data['execute_device'],
                           execute_time=data['execute_data']['execute_time'],
-                          transmit_time=data['execute_data']['transmit_time'])
+                          transmit_time=data['execute_data']['transmit_time'],
+                          real_execute_time=data['execute_data']['real_execute_time'])
         return service

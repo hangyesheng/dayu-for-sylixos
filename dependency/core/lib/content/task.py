@@ -149,6 +149,9 @@ class Task:
     def save_execute_time(self, execute_time):
         self.__pipeline_flow[self.__cur_flow_index].set_execute_time(execute_time=execute_time)
 
+    def save_real_execute_time(self, real_execute_time):
+        self.__pipeline_flow[self.__cur_flow_index].set_real_execute_time(real_execute_time=real_execute_time)
+
     def calculate_total_time(self):
         assert self.__pipeline_flow, 'pipeline of task is empty!'
         assert self.__cur_flow_index < len(self.__pipeline_flow), 'pipeline is not completed!'
