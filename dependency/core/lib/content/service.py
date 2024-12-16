@@ -66,7 +66,10 @@ class Service:
     def deserialize(data: str):
         data = json.loads(data)
         service = Service(data['service_name'], data['execute_device'],
-                          execute_time=data['execute_data']['execute_time'],
-                          transmit_time=data['execute_data']['transmit_time'],
-                          real_execute_time=data['execute_data']['real_execute_time'])
+                          execute_time=data['execute_data']['execute_time'] if 'execute_time'
+                                                                               in data['execute_data'] else 0,
+                          transmit_time=data['execute_data']['transmit_time'] if 'transmit_time'
+                                                                                 in data['execute_data'] else 0,
+                          real_execute_time=data['execute_data']['real_execute_time'] if 'real_execute_time'
+                                                                                         in data['execute_data'] else 0)
         return service
