@@ -84,7 +84,13 @@ class ProcessorServer:
                 continue
             LOGGER.debug(f'[Task Queue] Queue Size (loop): {self.task_queue.size()}')
 
-            new_task = self.process_task_service(task)
+            try:
+                new_task = self.process_task_service(task)
+            except Exception as e:
+                LOGGER.critical("[Processor Error] Processor encountered error when processing data.")
+                LOGGER.exception(e)
+                continue
+
             if new_task:
                 self.send_result_back_to_controller(new_task)
             FileOps.remove_data_file(task)
