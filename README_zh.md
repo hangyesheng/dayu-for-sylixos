@@ -71,7 +71,7 @@
 
 ## 快速开始
 
-- 在设备上安装 KubeEdge 系统（[安装指南](https://box.nju.edu.cn/f/d6ba2a96a2744f0f9e0a/)）
+- 在设备上安装 KubeEdge 系统（[安装指南](https://box.nju.edu.cn/f/63e12c4ea0794718b16c/)）
 - 修改模板目录中的模板文件（'[template](template)'）
 - 根据模板中的设置将文件部署到设备上，示例部署文件在[这里](https://box.nju.edu.cn/d/0dcaabb5362c4dfc8008/)
 - 安装/卸载大禹系统

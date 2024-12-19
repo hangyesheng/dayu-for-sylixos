@@ -75,7 +75,7 @@ Meanwhile, `processor` can be equipped with user-defined application services of
 
 
 ## Quick Start
-- Install KubeEdge system on your devices ([instruction](https://box.nju.edu.cn/f/d6ba2a96a2744f0f9e0a/)). Our dayu system is based on KubeEdge.
+- Install KubeEdge system on your devices ([instruction](https://box.nju.edu.cn/f/63e12c4ea0794718b16c/)). Our dayu system is based on KubeEdge.
 
 - Modify template files in template directory '[template](template)'
 
