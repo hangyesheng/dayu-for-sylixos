@@ -3,6 +3,6 @@
 # If you want to use proxy in docker buildx, please modify driver_opts.toml as the following templates
 
 [env]
-http_proxy="http://192.168.3.5:7890"
-https_proxy = "http://192.168.3.5:7890"
-no_proxy="localhost,127.0.0.1,.example.com,114.212.87.136"
+  http_proxy="http://192.168.3.5:7890"
+  https_proxy = "http://192.168.3.5:7890"
+  no_proxy="localhost,127.0.0.1,.example.com,114.212.87.136"
