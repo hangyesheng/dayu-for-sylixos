@@ -10,21 +10,18 @@ dayu::buildx::read_driver_opts() {
 
   _driver_opts_array=()
   if [[ -f "$driver_opts_file" ]]; then
-    local env_opts
-    while IFS= read -r line; do
-    [[ -z "$line" || "$line" =~ ^# ]] && continue
 
-    if [[ "$line" =~ = ]]; then
-        key=$(echo "$line" | awk -F'=' '{gsub(/ /, "", $1); gsub(/ /, "", $2); print $1}')
-        value=$(echo "$line" | awk -F'=' '{gsub(/ /, "", $1); gsub(/ /, "", $2); print $2}')
-        _driver_opts_array+=( "--driver-opt" "key=value" )
-        echo "env.$key = \"$value\""
-    fi
+    while IFS= read -r line; do
+      [[ -z "$line" || "$line" =~ ^# ]] && continue
+
+      if [[ "$line" =~ = ]]; then
+          key=$(echo "$line" | awk -F'=' '{gsub(/ /, "", $1); gsub(/ /, "", $2); print $1}')
+          value=$(echo "$line" | awk -F'=' '{gsub(/ /, "", $1); gsub(/ /, "", $2); print $2}')
+          _driver_opts_array+=( "--driver-opt" "key=value" )
+          echo "env.$key = \"$value\""
+      fi
     done < "$driver_opts_file"
 
-    while IFS= read -r line; do
-      _driver_opts_array+=( "--driver-opt" "$line" )
-    done <<< "$env_opts"
   fi
   echo "driver opts in buildx creating: " "${_driver_opts_array[@]}"
 }
