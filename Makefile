@@ -39,7 +39,6 @@ build:
 	@echo "Current registry is: $(REGISTRY)"
 	@echo "Current repository is: $(REPOSITORY)"
 	@echo "Current image tag is: $(IMAGE_TAG)"
-
 	bash hack/make-rules/cross-build.sh --files $(WHAT) --tag $(IMAGE_TAG) --repo $(REPOSITORY) --registry $(REGISTRY)
 
 # Build all images
@@ -48,7 +47,6 @@ all:
 	@echo "Current registry is: $(REGISTRY)"
 	@echo "Current repository is: $(REPOSITORY)"
 	@echo "Current image tag is: $(IMAGE_TAG)"
-
 	bash hack/make-rules/cross-build.sh --tag $(IMAGE_TAG) --repo $(REPOSITORY) --registry $(REGISTRY)
 
 
