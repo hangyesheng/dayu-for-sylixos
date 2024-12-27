@@ -193,12 +193,12 @@ dayu::buildx::build_and_push_multi_platform_images(){
                       IFS=':' read -ra DETAILS <<< "$entry"
                       platform="${DETAILS[0]}"
                       dockerfile="${DETAILS[1]}"
-                      build_image_special "$image" "$platform" "$dockerfile" "$CACHE_OPTION"
+                      dayu::buildx::build_image_special "$image" "$platform" "$dockerfile" "$CACHE_OPTION"
                   done
                   # After building all architectures, create and push manifest
-                  create_and_push_manifest "$image" "$TAG" "$REPO"
+                  dayu::buildx::create_and_push_manifest "$image" "$TAG" "$REPO"
               else
-                  build_image "$image" "${PLATFORMS[$image]}" "${DOCKERFILES[$image]}" "$CACHE_OPTION"
+                  dayu::buildx::build_image "$image" "${PLATFORMS[$image]}" "${DOCKERFILES[$image]}" "$CACHE_OPTION"
               fi
           else
               echo "Unknown image or platform not specified: $image"
@@ -213,12 +213,12 @@ dayu::buildx::build_and_push_multi_platform_images(){
                   IFS=':' read -ra DETAILS <<< "$entry"
                   platform="${DETAILS[0]}"
                   dockerfile="${DETAILS[1]}"
-                  build_image_special "$image" "$platform" "$dockerfile" "$CACHE_OPTION"
+                  dayu::buildx::build_image_special "$image" "$platform" "$dockerfile" "$CACHE_OPTION"
               done
               # After building all architectures, create and push manifest
-              create_and_push_manifest "$image" "$TAG" "$REPO"
+              dayu::buildx::create_and_push_manifest "$image" "$TAG" "$REPO"
           else
-              build_image "$image" "${PLATFORMS[$image]}" "${DOCKERFILES[$image]}" "$CACHE_OPTION"
+              dayu::buildx::build_image "$image" "${PLATFORMS[$image]}" "${DOCKERFILES[$image]}" "$CACHE_OPTION"
           fi
       done
   fi
