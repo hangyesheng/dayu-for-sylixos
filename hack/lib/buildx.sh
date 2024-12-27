@@ -15,8 +15,8 @@ dayu::buildx::read_driver_opts() {
       [[ -z "$line" || "$line" =~ ^# ]] && continue
 
       if [[ "$line" =~ = ]]; then
-          local key=$(echo "$line" | awk -F'=' '{gsub(/ /, "", $1); gsub(/ /, "", $2); print $1}')
-          local value=$(echo "$line" | awk -F'=' '{gsub(/ /, "", $1); gsub(/ /, "", $2); print $2}')
+          key=$(echo "$line" | awk -F'=' '{gsub(/ /, "", $1); gsub(/ /, "", $2); print $1}')
+          value=$(echo "$line" | awk -F'=' '{gsub(/ /, "", $1); gsub(/ /, "", $2); print $2}')
           _driver_opts_array+=( "--driver-opt" "$key=$value" )
       fi
     done < "$driver_opts_file"
