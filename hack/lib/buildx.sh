@@ -8,7 +8,7 @@ dayu::buildx::read_driver_opts() {
   local driver_opts_file="$1"
   local -n _driver_opts_array="$2"
 
-  dayu::util::install_tomlq
+  dayu::util::install_yq
 
   _driver_opts_array=()
   if [[ -f "$driver_opts_file" ]]; then
