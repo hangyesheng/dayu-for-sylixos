@@ -123,6 +123,8 @@ dayu::buildx::init_env(){
   dayu::buildx::prepare_env
   dayu::buildx::import_docker_info
   dayu::buildx::import_env_variables "$@"
+  echo "$REGISTRY"
+  echo "$NO_CACHE"
 }
 
 dayu::buildx::build_image() {
@@ -175,6 +177,8 @@ dayu::buildx::create_and_push_manifest() {
 
 dayu::buildx::build_and_push_multi_platform_images(){
   dayu::buildx::init_env "$@"
+  echo "$REGISTRY"
+  echo "$NO_CACHE"
 
   # Determine if --no-cache should be used
   CACHE_OPTION=""
