@@ -24,7 +24,7 @@ dayu::buildx::read_driver_opts() {
               _driver_opts_array+=( "--driver-opt" "\"$value\"" )
             fi
 
-        fi
+      fi
 
     done < "$driver_opts_file"
 
@@ -32,7 +32,7 @@ dayu::buildx::read_driver_opts() {
   echo "driver opts in buildx creating: " "${_driver_opts_array[@]}"
 }
 
-y
+
 dayu::buildx::prepare_env() {
   # Check whether buildx exists.
   if ! docker buildx >/dev/null 2>&1; then
