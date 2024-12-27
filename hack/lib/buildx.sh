@@ -38,12 +38,7 @@ dayu::buildx::prepare_env() {
   local BUILDKIT_CONFIG_FILE="${DAYU_ROOT}/hack/resource/buildkitd.toml"
   local DRIVER_OPTS_FILE="${DAYU_ROOT}/hack/resource/driver_opts.toml"
 
-  echo "here1"
-  echo "builder_instance: $BUILDER_INSTANCE"
-  docker buildx inspect $BUILDER_INSTANCE
-
   if ! docker buildx inspect $BUILDER_INSTANCE >/dev/null 2>&1; then
-    echo "here2"
     local -a DRIVER_OPTS=()
     dayu::buildx::read_driver_opts "$DRIVER_OPTS_FILE" DRIVER_OPTS
      docker buildx create \
@@ -53,7 +48,6 @@ dayu::buildx::prepare_env() {
       --config "$BUILDKIT_CONFIG_FILE" \
       "${DRIVER_OPTS[@]}"
   fi
-  echo "here3"
   docker buildx use $BUILDER_INSTANCE
 }
 
