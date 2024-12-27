@@ -63,9 +63,8 @@ dayu::buildx::import_docker_info() {
 
 
 dayu::buildx::import_env_variables(){
-  echo "$@"
-  echo "$1"
-  echo "$#"
+  NO_CACHE=false
+  SELECTED_FILES=""
   # Parse command line arguments
   while [[ $# -gt 0 ]]; do
       case "$1" in
@@ -123,8 +122,6 @@ dayu::buildx::init_env(){
   dayu::buildx::prepare_env
   dayu::buildx::import_docker_info
   dayu::buildx::import_env_variables "$@"
-  echo "$REGISTRY"
-  echo "$NO_CACHE"
 }
 
 dayu::buildx::build_image() {
