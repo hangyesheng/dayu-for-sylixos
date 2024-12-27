@@ -1,6 +1,6 @@
 # Template of buildkitd.toml for docker buildx.
 # Default buildkitd.toml is empty.
-# If you want to use http registry, please modify buildkitd.toml as the following templates.
+# If you want to use http registry or proxy when buildx docker images, please modify buildkitd.toml as the following templates.
 
 
 # use http registry
@@ -15,6 +15,9 @@ insecure-entitlements=["114.212.87.136:5000","repo:5000"]
   insecure = true
 
 
-
-
+# use proxy
+[worker.env]
+  HTTP_PROXY = "http://192.168.3.5:7890"
+  HTTPS_PROXY = "http://192.168.3.5:7890"
+  NO_PROXY = "localhost,127.0.0.1,.example.com,114.212.87.136"
 
