@@ -107,7 +107,6 @@ vim hack/resource/buildkitd.toml
 export REG=xxx
 export REPO=xxx
 export TAG=xxx
-
 ```
 
 build all images

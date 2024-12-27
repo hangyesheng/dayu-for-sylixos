@@ -89,6 +89,20 @@ ACTION=stop TEMPLATE=template/ bash - dayu.sh
 
 大禹系统的官方镜像托管在[dockerhub/dayuhub](https://hub.docker.com/u/dayuhub)
 
+设置构建镜像元信息
+```bash
+# 配置 buildx (默认为空, 样例可参照 hack/resource/buildkitd_template.toml)
+vim hack/resource/buildkitd.toml
+
+# 设置docker参数
+# default REG is docker.io
+# default REPO is dayuhub
+# default TAG is v1.0
+export REG=xxx
+export REPO=xxx
+export TAG=xxx
+```
+
 构建所有镜像
 ```bash
 make all
