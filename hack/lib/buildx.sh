@@ -63,6 +63,7 @@ dayu::buildx::import_docker_info() {
 
 
 dayu::buildx::import_env_variables(){
+  echo $@
   # Parse command line arguments
   while :; do
       case $1 in
@@ -117,6 +118,7 @@ dayu::buildx::import_env_variables(){
 }
 
 dayu::buildx::init_env(){
+  echo $@
   dayu::buildx::prepare_env
   dayu::buildx::import_docker_info
   dayu::buildx::import_env_variables "$@"
@@ -171,6 +173,7 @@ dayu::buildx::create_and_push_manifest() {
 }
 
 dayu::buildx::build_and_push_multi_platform_images(){
+  echo $@
   dayu::buildx::init_env "$@"
 
   # Determine if --no-cache should be used
