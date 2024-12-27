@@ -65,8 +65,9 @@ dayu::buildx::import_docker_info() {
 dayu::buildx::import_env_variables(){
   echo "$@"
   echo "$1"
+  echo "$#"
   # Parse command line arguments
-  while :; do
+  while [[ $# -gt 0 ]]; do
       case "$1" in
           --files)
               if [ "$2" ]; then
