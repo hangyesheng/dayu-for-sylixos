@@ -17,7 +17,7 @@ dayu::buildx::prepare_env() {
   # Create a new builder which gives access to the new multi-architecture features.
   builder_instance="dayu-buildx"
   if ! docker buildx inspect $builder_instance >/dev/null 2>&1; then
-    docker buildx create --use --name $builder_instance --driver docker-container  --buildkitd-flags "--config ${DAYU_ROOT}/hack/resource/buildkitd.toml"
+    docker buildx create --use --name $builder_instance --driver docker-container --config "${DAYU_ROOT}"/hack/resource/buildkitd.toml
   fi
   docker buildx use $builder_instance
 }
