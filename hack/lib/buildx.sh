@@ -11,8 +11,9 @@ dayu::buildx::read_driver_opts() {
   dayu::util::install_yq
 
   _driver_opts_array=()
+  echo "read driver opt file: $driver_opts_file"
   if [[ ! -f "$driver_opts_file" ]]; then
-    echo "read driver opt file: $driver_opts_file"
+
     local env_opts
     env_opts=$(yq eval '.env | to_entries[] | "env.\(.key)=\(.value)"' "$driver_opts_file")
     while IFS= read -r line; do
