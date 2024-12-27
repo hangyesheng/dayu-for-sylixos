@@ -5,5 +5,5 @@
 
 env.HTTP_PROXY = "http://192.168.3.5:7890"
 env.HTTPS_PROXY = "http://192.168.3.5:7890"
-env.NO_PROXY = "localhost,127.0.0.1,114.212.87.136"
+env.NO_PROXY = "localhost,127.0.0.1,114.212.87.136,repo"
 
