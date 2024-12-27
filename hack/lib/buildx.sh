@@ -187,7 +187,7 @@ dayu::buildx::build_and_push_multi_platform_images(){
       for image in "${ADDR[@]}"; do
           if [[ -n "${DOCKERFILES[$image]}" && -n "${PLATFORMS[$image]}" ]]; then
               # Check if it's a specially treated image
-              if [[ -n "${SPECIAL_BUILD[$image]}" ]]; then
+              if [[ -n "${SPECIAL_BUILD[$image]:-}" ]]; then
                   IFS=',' read -ra SPECIAL_PLATFORMS <<< "${SPECIAL_BUILD[$image]}"
                   for entry in "${SPECIAL_PLATFORMS[@]}"; do
                       IFS=':' read -ra DETAILS <<< "$entry"
