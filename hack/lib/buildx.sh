@@ -21,7 +21,7 @@ dayu::buildx::read_driver_opts() {
             if [[ "$value" =~ , ]]; then
                 _driver_opts_array+=( "--driver-opt" "$key=\"$value\"" )
             else
-              _driver_opts_array+=( "--driver-opt" "\"$value\"" )
+              _driver_opts_array+=( "--driver-opt" "$key=$value" )
             fi
 
       fi
