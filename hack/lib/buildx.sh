@@ -18,7 +18,7 @@ dayu::buildx::read_driver_opts() {
             key=$(echo "$line" | awk -F'=' '{gsub(/^[ \t]+|[ \t]+$/, "", $1); print $1}')
             value=$(echo "$line" | awk -F'=' '{gsub(/^[ \t]+|[ \t]+$/, "", $2); print $2}')
             value=$(echo "$value" | sed 's/^"\(.*\)"$/\1/')
-            _driver_opts_array+=( '--driver-opt "$key='$value'"' )
+            _driver_opts_array+=( '--driver-opt "'$key'='$value'"' )
         fi
         echo "here"
 
