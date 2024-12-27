@@ -91,8 +91,10 @@ ACTION=stop TEMPLATE=template/ bash - dayu.sh
 
 设置构建镜像元信息
 ```bash
-# 配置 buildx (默认为空, 样例可参照 hack/resource/buildkitd_template.toml)
+# 配置 buildx buildkitd (默认为空, 样例可参照 hack/resource/buildkitd_template.toml)
 vim hack/resource/buildkitd.toml
+# 配置 buildx driver-opt (默认为空, 样例可参照 hack/resource/driver_opts_template.toml)
+vim hack/resource/driver_opts.toml
 
 # 设置docker参数
 # default REG is docker.io
