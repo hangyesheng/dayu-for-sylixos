@@ -174,8 +174,6 @@ dayu::buildx::create_and_push_manifest() {
 
 dayu::buildx::build_and_push_multi_platform_images(){
   dayu::buildx::init_env "$@"
-  echo "$REGISTRY"
-  echo "$NO_CACHE"
 
   # Determine if --no-cache should be used
   CACHE_OPTION=""
@@ -208,6 +206,7 @@ dayu::buildx::build_and_push_multi_platform_images(){
       done
   else
       echo "No images specified, building all default images."
+      echo DOCKERFILES
       for image in "${!DOCKERFILES[@]}"; do
           if [[ -n "${SPECIAL_BUILD[$image]}" ]]; then
               IFS=',' read -ra SPECIAL_PLATFORMS <<< "${SPECIAL_BUILD[$image]}"
