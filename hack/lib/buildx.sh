@@ -13,7 +13,7 @@ dayu::buildx::read_driver_opts() {
   _driver_opts_array=()
   if [[ -f "$driver_opts_file" ]]; then
     local env_opts
-    env_opts=$(tomlq -t '.env | to_entries[] | "env.\(.key)=\(.value)"' "$driver_opts_file")
+    env_opts=$(yq -t '.env | to_entries[] | "env.\(.key)=\(.value)"' "$driver_opts_file")
     while IFS= read -r line; do
       _driver_opts_array+=( "--driver-opt" "$line" )
     done <<< "$env_opts"
