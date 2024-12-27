@@ -206,7 +206,6 @@ dayu::buildx::build_and_push_multi_platform_images(){
       done
   else
       echo "No images specified, building all default images."
-      echo "${DOCKERFILES[0]}"
       for image in "${!DOCKERFILES[@]}"; do
           if [[ -n "${SPECIAL_BUILD[$image]}" ]]; then
               IFS=',' read -ra SPECIAL_PLATFORMS <<< "${SPECIAL_BUILD[$image]}"
