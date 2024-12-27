@@ -12,14 +12,14 @@ dayu::buildx::read_driver_opts() {
 
   _driver_opts_array=()
   if [[ ! -f "$driver_opts_file" ]]; then
-
+    echo "read driver opt file: $driver_opts_file"
     local env_opts
     env_opts=$(yq eval '.env | to_entries[] | "env.\(.key)=\(.value)"' "$driver_opts_file")
     while IFS= read -r line; do
       _driver_opts_array+=( "--driver-opt" "$line" )
     done <<< "$env_opts"
   fi
-  echo "driver opts in buildx creating: ", "${_driver_opts_array[@]}"
+  echo "driver opts in buildx creating: " "${_driver_opts_array[@]}"
 }
 
 
@@ -35,7 +35,7 @@ dayu::buildx::prepare_env() {
 
   # Create a new builder which gives access to the new multi-architecture features.
   local BUILDER_INSTANCE="dayu-buildx"
-  local BUILDKIT_CONFIG_FILE="${DAYU_ROOT}"/hack/resource/buildkitd.toml
+  local BUILDKIT_CONFIG_FILE="${DAYU_ROOT}/hack/resource/buildkitd.toml"
   local DRIVER_OPTS_FILE="${DAYU_ROOT}/hack/resource/driver_opts.toml"
 
   local -a DRIVER_OPTS=()
