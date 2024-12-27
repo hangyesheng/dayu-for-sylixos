@@ -95,6 +95,21 @@ Components in Dayu system are dependent on docker containers. Thus, if you need 
 
 The official images of Dayu system is at [dockerhub/dayuhub](https://hub.docker.com/u/dayuhub).
 
+set meta information of building
+```bash
+# configure buildx (default as empty, example at hack/resource/buildkitd_template.toml)
+vim hack/resource/buildkitd.toml
+
+# set docker meta info
+# default REG is docker.io
+# default REPO is dayuhub
+# default TAG is v1.0
+export REG=xxx
+export REPO=xxx
+export TAG=xxx
+
+```
+
 build all images
 ```bash
 make all
