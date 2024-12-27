@@ -24,7 +24,7 @@ dayu::buildx::prepare_env() {
 
 dayu::buildx::import_docker_info() {
   # Default Dockerfiles and their platforms
-  DOCKERFILES=(
+  declare -g -A DOCKERFILES=(
       [backend]="build/backend.Dockerfile"
       [frontend]="build/frontend.Dockerfile"
       [datasource]="build/datasource.Dockerfile"
@@ -39,7 +39,7 @@ dayu::buildx::import_docker_info() {
       [gender-classification]="build/gender_classification_[amd64/arm64].Dockerfile"
   )
   # Corresponding platforms
-  PLATFORMS=(
+  declare -g -A PLATFORMS=(
       [backend]="linux/amd64"
       [frontend]="linux/amd64"
       [datasource]="linux/amd64,linux/arm64"
@@ -54,7 +54,7 @@ dayu::buildx::import_docker_info() {
       [gender-classification]="linux/amd64,linux/arm64"
   )
   # Images requiring special treatment, their platforms, and Dockerfiles
-  SPECIAL_BUILD=(
+  declare -g -A SPECIAL_BUILD=(
       [car-detection]="linux/amd64:build/car_detection_amd64.Dockerfile,linux/arm64:build/car_detection_arm64.Dockerfile"
       [face-detection]="linux/amd64:build/face_detection_amd64.Dockerfile,linux/arm64:build/face_detection_arm64.Dockerfile"
       [gender-classification]="linux/amd64:build/gender_classification_amd64.Dockerfile,linux/arm64:build/gender_classification_arm64.Dockerfile"
