@@ -18,9 +18,13 @@ dayu::buildx::read_driver_opts() {
             key=$(echo "$line" | awk -F'=' '{gsub(/^[ \t]+|[ \t]+$/, "", $1); print $1}')
             value=$(echo "$line" | awk -F'=' '{gsub(/^[ \t]+|[ \t]+$/, "", $2); print $2}')
             value=$(echo "$value" | sed 's/^"\(.*\)"$/\1/')
-            _driver_opts_array+=( '--driver-opt "'$key'='$value'"' )
+            if [[ "$value" =~ , ]]; then
+                _driver_opts_array+=( '--driver-opt "'$key'='$value'"' )
+            else
+              _driver_opts_array+=( "--driver-opt" "\"$value\"" )
+            fi
+
         fi
-        echo "here"
 
     done < "$driver_opts_file"
 
@@ -28,7 +32,7 @@ dayu::buildx::read_driver_opts() {
   echo "driver opts in buildx creating: " "${_driver_opts_array[@]}"
 }
 
-
+y
 dayu::buildx::prepare_env() {
   # Check whether buildx exists.
   if ! docker buildx >/dev/null 2>&1; then
