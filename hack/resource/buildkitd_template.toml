@@ -17,7 +17,6 @@ insecure-entitlements=["114.212.87.136:5000","repo:5000"]
 
 # use proxy
 [registry."docker.io"]
-  mirrors=["192.168.3.5:7890"]
-  http = true
-  insecure = true
+  mirrors=["a.ussh.net"]
+
 
