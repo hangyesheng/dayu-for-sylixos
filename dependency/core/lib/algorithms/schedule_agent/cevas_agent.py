@@ -10,6 +10,16 @@ from .base_agent import BaseAgent
 
 __all__ = ('CEVASAgent',)
 
+"""
+CEVAS Agent Class
+
+Implementation of CEVAS
+
+In this implementation, we make decision on one pipeline
+
+Zhang M, Wang F, Zhu Y, et al. Towards cloud-edge collaborative online video analytics with fine-grained serverless pipelines[C]//Proceedings of the 12th ACM multimedia systems conference. 2021: 80-93.
+"""
+
 
 @ClassFactory.register(ClassType.SCH_AGENT, alias='cevas')
 class CEVASAgent(BaseAgent, abc.ABC):
@@ -56,7 +66,7 @@ class CEVASAgent(BaseAgent, abc.ABC):
         return policy
 
     # 最优化目标
-    def optimize_target(self,strategy):
+    def optimize_target(self, strategy):
         a = 0.1
         b = 0.2
         return a * strategy[0] + b * strategy[1]
@@ -108,8 +118,8 @@ class CEVASAgent(BaseAgent, abc.ABC):
             target_idx = -1
             P = schedule_info[3]
             D = schedule_info[2]
-            edge_strategy=[D,0]
-            cloud_strategy=[0,P]
+            edge_strategy = [D, 0]
+            cloud_strategy = [0, P]
 
             target1 = self.optimize_target(edge_strategy)
             target2 = self.optimize_target(cloud_strategy)
