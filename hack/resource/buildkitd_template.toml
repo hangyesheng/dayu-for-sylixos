@@ -16,12 +16,8 @@ insecure-entitlements=["114.212.87.136:5000","repo:5000"]
 
 
 # use proxy
-[worker]
-  [worker.docker]
-    network = "default"
-
-  [worker.env]
-    HTTP_PROXY = "http://192.168.3.5:7890"
-    HTTPS_PROXY = "http://192.168.3.5:7890"
-    NO_PROXY = "localhost,127.0.0.1,.example.com,114.212.87.136"
+[registry."docker.io"]
+  mirrors=["192.168.3.5:7890"]
+  http = true
+  insecure = true
 
