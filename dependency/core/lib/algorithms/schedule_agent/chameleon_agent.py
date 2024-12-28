@@ -3,7 +3,7 @@ import os
 
 from core.lib.common import ClassFactory, ClassType, Context, LOGGER, EncodeOps
 from core.lib.common import VideoOps
-from core.lib.estimation import AccEstimator
+from core.lib.estimation import AccEstimator, OverheadEstimator
 from core.lib.common import Queue, FileOps
 from core.lib.network import NodeInfo, get_merge_address, NetworkAPIPath, NetworkAPIMethod, PortInfo, http_request
 from core.lib.content import Task
@@ -80,9 +80,7 @@ class ChameleonAgent(BaseAgent, abc.ABC):
         self.acc_gt_dir = acc_gt_dir
         self.acc_estimator = None
 
-        self.overhead_file = Context.get_file_path(os.path.join('scheduler/chameleon', 'chameleon_overhead.txt'))
-        if os.path.exists(self.overhead_file):
-            FileOps.remove_file(self.overhead_file)
+        self.overhead_estimator = OverheadEstimator('Chameleon', 'scheduler/chameleon')
 
     def get_all_knob_combinations(self):
         all_config_list = []
@@ -183,7 +181,6 @@ class ChameleonAgent(BaseAgent, abc.ABC):
             acc = self.acc_estimator.calculate_accuracy(hash_data, results, resolution_ratio, fps / 30)
         except Exception as e:
             LOGGER.warning(f'Calculate accuracy failed: {str(e)}')
-            raise e
             acc = 0
         return acc
 
@@ -318,28 +315,22 @@ class ChameleonAgent(BaseAgent, abc.ABC):
             # profiling frames has a number lower bound
             if not self.raw_frames.full():
                 continue
-            start_time = time.time()
 
             segment_num += 1
 
-            self.profiling_frames = self.raw_frames.get_all_without_drop()
+            with self.overhead_estimator:
+                self.profiling_frames = self.raw_frames.get_all_without_drop()
 
-            # 冷启动时， 为初始化的best_num个配置排序
-            if segment_num == 1:
-                self.update_best_config_list_for_segment()
-
-            # 非冷启动且属于当前大周期开头时，重新选择best_num个配置并排序
-            elif segment_num % (self.profile_window / self.segment_size) == 1:
-                self.update_best_config_list_for_window()
-
-            # 非冷启动且不位于大周期开头时, 为已经选好的best_num个配置排序
-            else:
-                self.update_best_config_list_for_segment()
-
-            end_time = time.time()
-            time_cost = end_time - start_time
-            with open(self.overhead_file, 'a') as f:
-                f.write(f'{(end_time - start_time) * 1000}\n')
+                # 冷启动时， 为初始化的best_num个配置排序
+                if segment_num == 1:
+                    self.update_best_config_list_for_segment()
+                # 非冷启动且属于当前大周期开头时，重新选择best_num个配置并排序
+                elif segment_num % (self.profile_window / self.segment_size) == 1:
+                    self.update_best_config_list_for_window()
+                # 非冷启动且不位于大周期开头时, 为已经选好的best_num个配置排序
+                else:
+                    self.update_best_config_list_for_segment()
+            time_cost = self.overhead_estimator.get_latest_overhead()
             LOGGER.info(f'[Chameleon Profile] Profile for time: {time_cost}s')
             LOGGER.info(f'[Config List] Best Config List: {self.best_config_list}')
             if self.segment_size > time_cost:

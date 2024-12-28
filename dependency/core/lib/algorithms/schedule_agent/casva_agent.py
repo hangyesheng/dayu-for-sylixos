@@ -6,7 +6,7 @@ import numpy as np
 
 from core.lib.common import ClassFactory, ClassType, LOGGER, FileOps, Context
 from core.lib.common import VideoOps
-from core.lib.estimation import AccEstimator
+from core.lib.estimation import AccEstimator, OverheadEstimator
 
 from .base_agent import BaseAgent
 
@@ -89,13 +89,10 @@ class CASVAAgent(BaseAgent, abc.ABC):
         self.past_buffer_size_value = 0
         self.latest_skip_count = 0
 
-        self.overhead_file = Context.get_file_path(os.path.join('scheduler/casva', 'casva_overhead.txt'))
-        if os.path.exists(self.overhead_file):
-            FileOps.remove_file(self.overhead_file)
+        self.overhead_estimator = OverheadEstimator('CASVA', 'scheduler/casva')
 
         self.reward_file = Context.get_file_path(os.path.join('scheduler/casva', 'reward.txt'))
-        if os.path.exists(self.reward_file):
-            FileOps.remove_file(self.reward_file)
+        FileOps.remove_file(self.reward_file)
 
     def get_drl_state_buffer(self):
         while True:
@@ -118,9 +115,7 @@ class CASVAAgent(BaseAgent, abc.ABC):
         resolution_index = min(int((action[0] + 1) / 2 * len(self.resolution_list)), len(self.resolution_list) - 1)
         fps_index = min(int((action[1] + 1) / 2 * len(self.fps_list)), len(self.fps_list) - 1)
         qp_index = min(int((action[2] + 1) / 2 * len(self.qp_list)), len(self.qp_list) - 1)
-        # LOGGER.debug(f'[Map Action] fps_list: {self.fps_list}')
-        # LOGGER.debug(f'[Map Action] fps_index: {fps_index}')
-        # LOGGER.debug(f'[Map Action] action[1]: {action[1]}')
+
         self.latest_policy.update({'resolution': self.resolution_list[resolution_index],
                                    'fps': self.fps_list[fps_index],
                                    'qp': self.qp_list[qp_index],
@@ -223,11 +218,8 @@ class CASVAAgent(BaseAgent, abc.ABC):
         LOGGER.info(f'[CASVA DRL Train] (agent {self.agent_id}) Start train drl agent ..')
         state = self.reset_drl_env()
         for step in range(self.total_steps):
-            start_time = time.time()
-            action = self.drl_agent.select_action(state, deterministic=False, with_logprob=False)
-            end_time = time.time()
-            with open(self.overhead_file, 'a') as f:
-                f.write(f'{(end_time - start_time) * 1000}\n')
+            with self.overhead_estimator:
+                action = self.drl_agent.select_action(state, deterministic=False, with_logprob=False)
 
             next_state, reward, done, info = self.step_drl_env(action)
             done = self.adapter.done_adapter(done, step)
@@ -257,11 +249,8 @@ class CASVAAgent(BaseAgent, abc.ABC):
             time.sleep(self.drl_schedule_interval)
             cur_step += 1
 
-            start_time = time.time()
-            action = self.drl_agent.select_action(state, deterministic=False, with_logprob=False)
-            end_time = time.time()
-            with open(self.overhead_file, 'a') as f:
-                f.write(f'{(end_time - start_time) * 1000}\n')
+            with self.overhead_estimator:
+                action = self.drl_agent.select_action(state, deterministic=False, with_logprob=False)
 
             next_state, reward, done, info = self.step_drl_env(action)
             done = self.adapter.done_adapter(done, cur_step)

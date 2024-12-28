@@ -1,10 +1,9 @@
 import abc
 import time
-
 import numpy as np
-import os
 
-from core.lib.common import ClassFactory, ClassType, Context, Queue, LOGGER, FileOps
+from core.lib.common import ClassFactory, ClassType, Context, LOGGER
+from core.lib.estimation import OverheadEstimator
 
 from .base_agent import BaseAgent
 
@@ -34,18 +33,14 @@ class CEVASAgent(BaseAgent, abc.ABC):
         self.pipe_seg = 0
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        logic_node_num = 1  # 根据训练时的参数设置
+        logic_node_num = 1
         model_path = Context.get_file_path('model.pt')
         self.model = MLP(logic_node_num=logic_node_num).to(self.device)
         self.model.load_state_dict(torch.load(model_path, map_location=self.device))
-        self.model.eval()  # 设置为评估模式
+        self.model.eval()
 
-        self.overhead_file = Context.get_file_path(os.path.join('scheduler/cevas', 'cevas_overhead.txt'))
-        if os.path.exists(self.overhead_file):
-            FileOps.remove_file(self.overhead_file)
+        self.overhead_estimator = OverheadEstimator('CEVAS', 'scheduler/cevas')
 
-        # 目标数量（平均值）
-        # 文件大小
         self.data_time_sequence = []
         self.time_index = 0
         self.time_slot = time_slot
@@ -104,38 +99,30 @@ class CEVASAgent(BaseAgent, abc.ABC):
                 LOGGER.info('[No Sequence data] Waiting...')
                 continue
 
-            start_time = time.time()
-            # 在t时隙获得t+1时隙单个流水线的最佳分割点
-            # 获得t+1时隙相关输入信息
-            schedule_info = self.get_pipeline_cpu_memory(self.time_index, self.time_slot)
-            LOGGER.debug(f'[CEVAS schedule info] schedule info: {schedule_info}')
+            with self.overhead_estimator:
+                # 在t时隙获得t+1时隙单个流水线的最佳分割点
+                # 获得t+1时隙相关输入信息
+                schedule_info = self.get_pipeline_cpu_memory(self.time_index, self.time_slot)
+                LOGGER.debug(f'[CEVAS schedule info] schedule info: {schedule_info}')
 
-            # 信息顺序为 边缘节点CPU限制 / 内存限制 / 每个节点输入数据量大小 / 云开销
-            # 解空间比较小,遍历获得结果即可
-            # 遍历分割点
-            # 优化目标 target=min (a * P * x + b * D * x)
-            target = 0
-            target_idx = -1
-            P = schedule_info[3]
-            D = schedule_info[2]
-            edge_strategy = [D, 0]
-            cloud_strategy = [0, P]
+                # 信息顺序为 边缘节点CPU限制 / 内存限制 / 每个节点输入数据量大小 / 云开销
+                # 解空间比较小,遍历获得结果即可
+                # 遍历分割点
+                # 优化目标 target=min (a * P * x + b * D * x)
+                target = 0
+                target_idx = -1
+                P = schedule_info[3]
+                D = schedule_info[2]
+                edge_strategy = [D, 0]
+                cloud_strategy = [0, P]
 
-            target1 = self.optimize_target(edge_strategy)
-            target2 = self.optimize_target(cloud_strategy)
-            # for idx, item in enumerate(schedule_info):
-            #     # 查询前序开销
-            #
-            #     for idx2, item2 in enumerate(schedule_info[idx:]):
-            #         P += item2[3]
+                target1 = self.optimize_target(edge_strategy)
+                target2 = self.optimize_target(cloud_strategy)
 
-            if target1 > target2:
-                target_idx = 0
-            else:
-                target_idx = 1
-            end_time = time.time()
-            with open(self.overhead_file, 'a') as f:
-                f.write(f'{(end_time - start_time) * 1000}\n')
+                if target1 > target2:
+                    target_idx = 0
+                else:
+                    target_idx = 1
 
             if target_idx != -1:
                 raw_seg = self.pipe_seg
@@ -149,9 +136,6 @@ class CEVASAgent(BaseAgent, abc.ABC):
 
     def update_resource(self, device, resource):
         pass
-        # if 'edge' in device:
-        #     self.edge_cpu = resource['cpu']
-        #     self.edge_mem = resource['memory']
 
     def update_policy(self, policy):
         pass

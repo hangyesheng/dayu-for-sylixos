@@ -1,8 +1,7 @@
 import abc
-import time
-import os
 
-from core.lib.common import ClassFactory, ClassType, LOGGER, Context, FileOps
+from core.lib.common import ClassFactory, ClassType, LOGGER
+from core.lib.estimation import OverheadEstimator
 
 from .base_agent import BaseAgent
 
@@ -45,9 +44,7 @@ class FCAgent(BaseAgent, abc.ABC):
         self.theta_high = 0
         self.theta_low = 0 - theta / 1000 * self.window_length
 
-        self.overhead_file = Context.get_file_path(os.path.join('scheduler/fc', 'fc_overhead.txt'))
-        if os.path.exists(self.overhead_file):
-            FileOps.remove_file(self.overhead_file)
+        self.overhead_estimator = OverheadEstimator('FC', 'scheduler/fc')
 
     def get_schedule_plan(self, info):
         if len(self.history_window) < self.window_length:
@@ -56,11 +53,8 @@ class FCAgent(BaseAgent, abc.ABC):
 
         policy = self.reference_policy.copy()
 
-        start_time = time.time()
-        updated_resolution_index = self.feed_back_control()
-        end_time = time.time()
-        with open(self.overhead_file, 'a') as f:
-            f.write(f'{(end_time - start_time) * 1000}\n')
+        with self.overhead_estimator:
+            updated_resolution_index = self.feed_back_control()
 
         policy.update({'resolution': self.resolution_list[updated_resolution_index]})
         cloud_device = self.cloud_device

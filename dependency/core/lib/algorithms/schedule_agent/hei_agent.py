@@ -5,7 +5,7 @@ import time
 import numpy as np
 
 from core.lib.common import ClassFactory, ClassType, LOGGER, FileOps, Context
-from core.lib.estimation import AccEstimator
+from core.lib.estimation import AccEstimator, OverheadEstimator
 from core.lib.common import VideoOps
 
 from .base_agent import BaseAgent
@@ -28,7 +28,7 @@ class HEIAgent(BaseAgent, abc.ABC):
                  punishment_coefficient: float = 20,
                  punishment_bound: float = -2,
                  reward_bound: float = 0.5,
-                 reward_coefficient: float = 0.3,):
+                 reward_coefficient: float = 0.3, ):
         from .hei import SoftActorCritic, RandomBuffer, Adapter, NegativeFeedback, StateBuffer
 
         self.agent_id = agent_id
@@ -80,16 +80,10 @@ class HEIAgent(BaseAgent, abc.ABC):
         self.schedule_plan = None
 
         self.reward_file = Context.get_file_path(os.path.join('scheduler/hei', 'reward.txt'))
-        if os.path.exists(self.reward_file):
-            FileOps.remove_file(self.reward_file)
+        FileOps.remove_file(self.reward_file)
 
-        self.macro_overhead_file = Context.get_file_path(os.path.join('scheduler/hei', 'macro_overhead.txt'))
-        if os.path.exists(self.macro_overhead_file):
-            FileOps.remove_file(self.macro_overhead_file)
-
-        self.micro_overhead_file = Context.get_file_path(os.path.join('scheduler/hei', 'micro_overhead.txt'))
-        if os.path.exists(self.micro_overhead_file):
-            FileOps.remove_file(self.micro_overhead_file)
+        self.macro_overhead_estimator = OverheadEstimator('HEI-Macro', 'scheduler/hei')
+        self.micro_overhead_estimator = OverheadEstimator('HEI-Micro', 'scheduler/hei')
 
     def get_drl_state_buffer(self):
         while True:
@@ -181,11 +175,8 @@ class HEIAgent(BaseAgent, abc.ABC):
         state = self.reset_drl_env()
         for step in range(self.total_steps):
 
-            start_time = time.time()
-            action = self.drl_agent.select_action(state, deterministic=False, with_logprob=False)
-            end_time = time.time()
-            with open(self.macro_overhead_file, 'a') as f:
-                f.write(f'{(end_time - start_time) * 1000}\n')
+            with self.macro_overhead_estimator:
+                action = self.drl_agent.select_action(state, deterministic=False, with_logprob=False)
 
             next_state, reward, done, info = self.step_drl_env(action)
             done = self.adapter.done_adapter(done, step)
@@ -215,11 +206,8 @@ class HEIAgent(BaseAgent, abc.ABC):
             time.sleep(self.drl_schedule_interval)
             cur_step += 1
 
-            start_time = time.time()
-            action = self.drl_agent.select_action(state, deterministic=False, with_logprob=False)
-            end_time = time.time()
-            with open(self.macro_overhead_file, 'a') as f:
-                f.write(f'{(end_time - start_time) * 1000}\n')
+            with self.macro_overhead_estimator:
+                action = self.drl_agent.select_action(state, deterministic=False, with_logprob=False)
 
             next_state, reward, done, info = self.step_drl_env(action)
             done = self.adapter.done_adapter(done, cur_step)
@@ -234,11 +222,10 @@ class HEIAgent(BaseAgent, abc.ABC):
         while True:
             time.sleep(self.nf_schedule_interval)
 
-            start_time = time.time()
-            self.schedule_plan = self.nf_agent(self.latest_policy, self.latest_task_delay, self.intermediate_decision)
-            end_time = time.time()
-            with open(self.micro_overhead_file, 'a') as f:
-                f.write(f'{(end_time - start_time) * 1000}\n')
+            with self.micro_overhead_estimator:
+                self.schedule_plan = self.nf_agent(self.latest_policy,
+                                                   self.latest_task_delay,
+                                                   self.intermediate_decision)
 
             LOGGER.debug(f'[NF Update] (agent {self.agent_id}) schedule: {self.schedule_plan}')
 

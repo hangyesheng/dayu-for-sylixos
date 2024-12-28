@@ -5,7 +5,7 @@ import numpy as np
 
 from core.lib.common import ClassFactory, ClassType, LOGGER, FileOps, Context
 from core.lib.estimation import AccEstimator
-from core.lib.common import VideoOps, FileNameConstant
+from core.lib.common import VideoOps
 
 from .base_agent import BaseAgent
 
@@ -73,8 +73,7 @@ class HEIDRLAgent(BaseAgent, abc.ABC):
         self.edge_device = None
 
         self.reward_file = Context.get_file_path(os.path.join('scheduler/hei-drl', 'reward.txt'))
-        if os.path.exists(self.reward_file):
-            FileOps.remove_file(self.reward_file)
+        FileOps.remove_file(self.reward_file)
 
     def get_drl_state_buffer(self):
         while True:
