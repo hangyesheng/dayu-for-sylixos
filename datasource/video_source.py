@@ -1,19 +1,15 @@
 import os
+import cv2
+import json
+import uvicorn
+import argparse
 
 from fastapi import FastAPI, Form, BackgroundTasks
-
 from fastapi.routing import APIRoute
 from starlette.responses import JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-import cv2
-import json
-
-import uvicorn
-import argparse
-import time
-
-from core.lib.common import VideoOps, FileOps, LOGGER
+from core.lib.common import FileOps, LOGGER, Context
 
 
 class VideoSource:
@@ -42,12 +38,28 @@ class VideoSource:
         self.play_mode = play_mode
 
         self.frame_count = 0
-
         self.is_end = False
-
         self.frame_max_count = len(os.listdir(self.data_dir))
 
-        self.file_name = f'{time.time()}.mp4'
+        self.file_name = None
+
+        self.meta_data = None
+        self.raw_meta_data = None
+
+        self.frame_filter = None
+        self.frame_process = None
+        self.frame_compress = None
+
+    def get_one_frame(self):
+        frame = cv2.imread(os.path.join(self.data_dir, f'{self.frame_count}.jpg'))
+        self.frame_count += 1
+        if self.play_mode == 'non-cycle' and self.frame_count >= self.frame_max_count:
+            self.is_end = True
+            LOGGER.info('A video play cycle ends. Video play ends in non-cycle mode.')
+        else:
+            LOGGER.info('A video play cycle ends. Replay video in cycle mode.')
+        self.frame_count %= self.frame_max_count
+        return frame
 
     def get_source_data(self, data: str = Form(...)):
 
@@ -55,47 +67,32 @@ class VideoSource:
             return []
 
         data = json.loads(data)
-        fps = data['fps']
-        raw_fps = data['raw_fps']
-        fps = min(fps, raw_fps)
-        buffer_size = data['buffer_size']
-        encoding = data['encoding']
-        resolution = data['resolution']
 
-        if fps / raw_fps < 0.5:
-            ratio = raw_fps // fps
-            frames_index = [self.frame_count + ratio * i for i in range(buffer_size)]
-            self.frame_count = frames_index[-1] + ratio
-        elif 0.5 <= fps / raw_fps < 1:
-            ratio = raw_fps // (raw_fps - fps)
-            frames_index = [self.frame_count + i for i in range(buffer_size + (buffer_size - 1) // (ratio - 1))
-                            if i % ratio != ratio - 1][:buffer_size]
-            self.frame_count = frames_index[-1] + 1
-        else:
-            frames_index = list(range(self.frame_count, self.frame_count + buffer_size))
-            self.frame_count = frames_index[-1] + 1
+        source_id = data['source_id']
+        task_id = data['task_id']
+        self.meta_data = data['meta_data']
+        self.raw_meta_data = data['raw_meta_data']
 
-        if self.play_mode == 'non-cycle' and self.frame_count >= self.frame_max_count - 1:
-            self.is_end = True
-            frames_index = [x for x in frames_index if x < self.frame_max_count]
-        else:
-            frames_index = [x % self.frame_max_count for x in frames_index]
+        frame_filter_name = data['gen_filter_name']
+        frame_process_name = data['gen_process_name']
+        frame_compress_name = data['gen_compress_name']
 
-        self.frame_count = self.frame_count % self.frame_max_count
+        buffer_size = self.meta_data['buffer_size']
 
-        LOGGER.debug(f'frames_index: {frames_index}, max frame: {self.frame_max_count}')
-        LOGGER.debug(f'is end: {self.is_end}')
+        self.frame_filter = Context.get_algorithm('GEN_FILTER', al_name=frame_filter_name)
+        self.frame_process = Context.get_algorithm('GEN_PROCESS', al_name=frame_process_name)
+        self.frame_compress = Context.get_algorithm('GEN_COMPRESS', al_name=frame_compress_name)
 
-        resolution = VideoOps.text2resolution(resolution)
-        out = cv2.VideoWriter(self.file_name, cv2.VideoWriter_fourcc(*encoding), 30,
-                              resolution)
+        frames_index = []
+        frames_buffer = []
+        while len(frames_buffer) < buffer_size:
+            frame = self.get_one_frame()
+            if self.frame_filter(self, frame):
+                frames_buffer.append(frame)
+                frames_index.append(self.frame_count)
 
-        for i in frames_index:
-            frame = cv2.imread(os.path.join(self.data_dir, f'{i}.jpg'))
-            frame = cv2.resize(frame, (resolution[0], resolution[1]))
-            out.write(frame)
-
-        out.release()
+        frames_buffer = [self.frame_process(self, frame) for frame in frames_buffer]
+        self.file_name = self.frame_compress(self, frames_buffer, source_id, task_id)
 
         return frames_index
 
@@ -111,7 +108,7 @@ if __name__ == '__main__':
     parser.add_argument('--play_mode', type=str, required=True)
     args = parser.parse_args()
 
-    port = int(args.address.split(':')[-1].split('/')[0])
-    path = args.address.split(':')[-1].split('/')[-1]
-    video = VideoSource(args.root, path, args.play_mode)
-    uvicorn.run(video.app, host='0.0.0.0', port=port)
+    server_port = int(args.address.split(':')[-1].split('/')[0])
+    server_path = args.address.split(':')[-1].split('/')[-1]
+    video = VideoSource(args.root, server_path, args.play_mode)
+    uvicorn.run(video.app, host='0.0.0.0', port=server_port)
