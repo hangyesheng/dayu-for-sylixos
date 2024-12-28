@@ -33,7 +33,7 @@ class OverheadEstimator:
 
     def write_overhead(self, overhead):
         with open(self.overhead_file, 'a') as f:
-            f.write(overhead)
+            f.write(f'{overhead}\n')
 
     def clear(self):
         self.latest_overhead = 0

@@ -258,7 +258,7 @@ class BackendCore:
 
     def check_datasource_config(self, config_path):
         if not YamlOps.is_yaml_file(config_path):
-            return False
+            return None
 
         config = YamlOps.read_yaml(config_path)
         try:
