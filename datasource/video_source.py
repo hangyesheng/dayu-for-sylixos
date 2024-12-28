@@ -53,11 +53,12 @@ class VideoSource:
     def get_one_frame(self):
         frame = cv2.imread(os.path.join(self.data_dir, f'{self.frame_count}.jpg'))
         self.frame_count += 1
-        if self.play_mode == 'non-cycle' and self.frame_count >= self.frame_max_count:
-            self.is_end = True
-            LOGGER.info('A video play cycle ends. Video play ends in non-cycle mode.')
-        else:
-            LOGGER.info('A video play cycle ends. Replay video in cycle mode.')
+        if self.frame_count >= self.frame_max_count:
+            if self.play_mode == 'non-cycle':
+                self.is_end = True
+                LOGGER.info('A video play cycle ends. Video play ends in non-cycle mode.')
+            else:
+                LOGGER.info('A video play cycle ends. Replay video in cycle mode.')
         self.frame_count %= self.frame_max_count
         return frame
 
