@@ -31,7 +31,7 @@ scheduler-policies:
     yaml: hei.yaml
     dependency:
       generator: generator-base.yaml
-      controller: controller-base.yaml
+      controller: controller-nondisplay.yaml
       distributor: distributor-base.yaml
       monitor: monitor-base.yaml
   - id: hei-macro-only
