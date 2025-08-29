@@ -1,8 +1,38 @@
+import json
+import subprocess
+import signal
+import sys
+from contextlib import contextmanager
+
 from .generator import Generator
 from core.lib.content import Task
 
-from core.lib.common import ClassType, ClassFactory, Context, LOGGER
+from core.lib.common import ClassType, ClassFactory, Context, LOGGER, FileOps
 
+@contextmanager
+def managed_process(*args, **kwargs):
+    proc = subprocess.Popen(*args, **kwargs)
+    def handler(signum, frame):
+        print(f"收到信号 {signum}，终止子进程 {proc.pid}...")
+        proc.terminate()
+        try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+        sys.exit(0)
+    
+    signal.signal(signal.SIGINT, handler)
+    signal.signal(signal.SIGTERM, handler)
+    
+    try:
+        yield proc
+    finally:
+        if proc.poll() is None:
+            proc.terminate()
+            try:
+                proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                proc.kill()
 
 @ClassFactory.register(ClassType.GENERATOR, alias='video')
 class VideoGenerator(Generator):
@@ -20,14 +50,32 @@ class VideoGenerator(Generator):
         self.record_total_start_ts(cur_task)
         super().submit_task_to_controller(cur_task)
 
+    def write_meta_data_to_file(self, meta_data, file_path):
+        with open(file_path, 'w', encoding='utf-8') as file:
+            json.dump(meta_data, file, ensure_ascii=False, indent=4)
+
     def run(self):
         # initialize with default schedule policy
         self.after_schedule_operation(self, None)
 
-        while True:
-            if not self.getter_filter(self):
-                LOGGER.info('[Filter Getter] step to next round of getter.')
-                continue
-            self.data_getter(self)
+        self.generator_saved_dir = f"./data_of_source_{self.source_id}/"
+        FileOps.remove_file(self.generator_saved_dir)
+        FileOps.create_directory(self.generator_saved_dir)
 
-            self.request_schedule_policy()
+        self.write_meta_data_to_file(self.meta_data, self.generator_saved_dir + 'meta.json')
+        
+        command = ["./rtsp_solver", "-url", self.video_data_source, 
+                                    "-saved_dir", self.generator_saved_dir, 
+                                    "-meta_file", self.generator_saved_dir + "meta.json"]
+
+        with managed_process(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, start_new_session=True) as process:
+            print("子进程已启动, PID:", process.pid)
+
+            while True:
+                if not self.getter_filter(self):
+                    LOGGER.info('[Filter Getter] step to next round of getter.')
+                    continue
+                self.write_meta_data_to_file(self.meta_data, self.generator_saved_dir + 'meta.json')
+                self.data_getter(self)
+
+                self.request_schedule_policy()
