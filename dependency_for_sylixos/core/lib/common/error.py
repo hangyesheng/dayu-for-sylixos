@@ -1,0 +1,2 @@
+class FileNotMountedError(Exception):
+    pass
