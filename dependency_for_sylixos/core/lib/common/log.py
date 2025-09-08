@@ -1,5 +1,4 @@
 import logging
-import colorlog
 from .constant import SystemConstant
 from .context import Context
 
@@ -13,9 +12,10 @@ class Logger:
 
         self.logger = logging.getLogger(name)
 
-        self.format = colorlog.ColoredFormatter(
-            '%(log_color)s[%(asctime)-15s] %(filename)s(%(lineno)d)'
-            ' [%(levelname)s]%(reset)s - %(message)s', )
+        # 使用标准 logging.Formatter，去掉 colorlog 相关内容
+        self.format = logging.Formatter(
+            '[%(asctime)-15s] %(filename)s(%(lineno)d) [%(levelname)s] - %(message)s'
+        )
 
         self.handler = logging.StreamHandler()
         self.handler.setFormatter(self.format)
