@@ -1,0 +1,33 @@
+ARCH arm64
+
+MOUNT /bin/javascript /bin/javascript rx
+
+MOUNT /lib /lib rx
+
+MOUNT /qt /qt rx
+
+MOUNT /usr/bin /usr/bin rx
+
+MOUNT /usr/lib /usr/lib rx
+
+ENV PATH=/usr/bin:/bin:/usr/pkg/sbin:/sbin:/usr/local/bin
+
+ENV LD_LIBRARY_PATH=/qt/lib:/usr/lib:/lib:/usr/local/lib:/lib/jsre:/lib/vsoa
+
+
+# Required to build Ubuntu 20.04 without user prompts with DLFW container
+ENV DEBIAN_FRONTEND=noninteractive
+
+ENV TZ=Asia/Shanghai
+
+ENV LANG=en_US.UTF-8
+
+COPY ../../dependency_for_sylixos/core /apps/generator/core
+
+WORKDIR /apps/generator
+COPY ../../components_for_sylixos/generator /apps/generator
+COPY ./rtsp_solver /apps/generator/rtsp_solver
+
+CMD python3 /apps/generator/main.py
+
+
