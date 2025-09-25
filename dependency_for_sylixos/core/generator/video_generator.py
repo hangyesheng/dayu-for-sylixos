@@ -5,7 +5,6 @@ import sys
 from contextlib import contextmanager
 
 from .generator import Generator
-from core.lib.content import Task
 
 from core.lib.common import ClassType, ClassFactory, Context, LOGGER, FileOps
 

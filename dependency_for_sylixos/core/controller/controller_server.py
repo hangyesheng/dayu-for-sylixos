@@ -1,8 +1,5 @@
-from fastapi import FastAPI, BackgroundTasks, UploadFile, File, Form
+from core.lib.network import SkyHTTPServer, SkyBackgroundTasks
 
-from fastapi.routing import APIRoute
-from starlette.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
 from core.lib.network import NetworkAPIPath, NetworkAPIMethod
 from core.lib.common import FileOps
 from core.lib.common import Context
@@ -15,31 +12,28 @@ class ControllerServer:
     def __init__(self):
         self.controller = Controller()
 
-        self.app = FastAPI(routes=[
-            APIRoute(NetworkAPIPath.CONTROLLER_TASK,
-                     self.submit_task,
-                     response_class=JSONResponse,
-                     methods=[NetworkAPIMethod.CONTROLLER_TASK]
-                     ),
-            APIRoute(NetworkAPIPath.CONTROLLER_RETURN,
-                     self.process_return,
-                     response_class=JSONResponse,
-                     methods=[NetworkAPIMethod.CONTROLLER_RETURN]
-                     ),
-        ], log_level='trace', timeout=6000)
-
-        self.app.add_middleware(
-            CORSMiddleware, allow_origins=["*"], allow_credentials=True,
-            allow_methods=["*"], allow_headers=["*"],
+        self.app = SkyHTTPServer()
+        self.app.add_route(
+            path=NetworkAPIPath.CONTROLLER_TASK,
+            method=NetworkAPIMethod.CONTROLLER_TASK,
+            handler=self.submit_task
+        )
+        self.app.add_route(
+            path=NetworkAPIPath.CONTROLLER_RETURN,
+            method=NetworkAPIMethod.CONTROLLER_RETURN,
+            handler=self.process_return
         )
 
         self.is_delete_temp_files = Context.get_parameter('DELETE_TEMP_FILES', direct=False)
 
-    async def submit_task(self, backtask: BackgroundTasks, file: UploadFile = File(...), data: str = Form(...)):
+    async def submit_task(self, request, backtask: SkyBackgroundTasks, ):
+        file = self.app.parse_files_from_request(request=request)[0]
         file_data = await file.read()
+        data = self.app.parse_forms_from_request(request=request)[0]['data']
         backtask.add_task(self.submit_task_background, data, file_data)
 
-    async def process_return(self, backtask: BackgroundTasks,  data: str = Form(...)):
+    async def process_return(self, request, backtask: SkyBackgroundTasks):
+        data = self.app.parse_forms_from_request(request=request)[0]['data']
         backtask.add_task(self.process_return_background, data)
 
     def submit_task_background(self, data, file_data):

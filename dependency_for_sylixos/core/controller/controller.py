@@ -1,7 +1,7 @@
 import os
 
 from core.lib.estimation import TimeEstimator
-from core.lib.network import http_request
+from core.lib.network import sky_request
 from core.lib.common import LOGGER
 from core.lib.common import Context
 from core.lib.common import SystemConstant
@@ -35,12 +35,12 @@ class Controller:
                                            port=self.controller_port,
                                            path=NetworkAPIPath.CONTROLLER_TASK)
 
-        http_request(url=controller_address,
-                     method=NetworkAPIMethod.CONTROLLER_TASK,
-                     data={'data': cur_task.serialize()},
-                     files={'file': (cur_task.get_file_path(),
-                                     open(cur_task.get_file_path(), 'rb'),
-                                     'multipart/form-data')})
+        sky_request(url=controller_address,
+                    method=NetworkAPIMethod.CONTROLLER_TASK,
+                    data={'data': cur_task.serialize()},
+                    files={'file': (cur_task.get_file_path(),
+                                    open(cur_task.get_file_path(), 'rb'),
+                                    'multipart/form-data')})
 
         LOGGER.info(f'[To Device {device}] source: {cur_task.get_source_id()}  '
                     f'task: {cur_task.get_task_id()} current service: {cur_task.get_flow_index()}')
@@ -62,13 +62,13 @@ class Controller:
                            f'task: {cur_task.get_task_id()} file: {cur_task.get_file_path()}')
             return
 
-        http_request(url=service_address,
-                     method=NetworkAPIMethod.PROCESSOR_PROCESS,
-                     data={'data': cur_task.serialize()},
-                     files={'file': (cur_task.get_file_path(),
-                                     open(cur_task.get_file_path(), 'rb'),
-                                     'multipart/form-data')}
-                     )
+        sky_request(url=service_address,
+                    method=NetworkAPIMethod.PROCESSOR_PROCESS,
+                    data={'data': cur_task.serialize()},
+                    files={'file': (cur_task.get_file_path(),
+                                    open(cur_task.get_file_path(), 'rb'),
+                                    'multipart/form-data')}
+                    )
 
         LOGGER.info(f'[To Service {service}] source: {cur_task.get_source_id()}  '
                     f'task: {cur_task.get_task_id()} current service: {cur_task.get_flow_index()}')
@@ -81,10 +81,10 @@ class Controller:
             return
         file_content = open(cur_task.get_file_path(), 'rb') if self.is_display else b''
 
-        http_request(url=self.distribute_address,
-                     method=NetworkAPIMethod.DISTRIBUTOR_DISTRIBUTE,
-                     files={'file': (cur_task.get_file_path(), file_content, 'multipart/form-data')},
-                     data={'data': cur_task.serialize()})
+        sky_request(url=self.distribute_address,
+                    method=NetworkAPIMethod.DISTRIBUTOR_DISTRIBUTE,
+                    files={'file': (cur_task.get_file_path(), file_content, 'multipart/form-data')},
+                    data={'data': cur_task.serialize()})
 
         LOGGER.info(f'[To Distributor] source: {cur_task.get_source_id()}  task: {cur_task.get_task_id()} '
                     f'current service: {cur_task.get_flow_index()}')
