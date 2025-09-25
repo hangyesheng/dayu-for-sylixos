@@ -10,12 +10,12 @@ from core.lib.network import merge_address
 from core.lib.network import NodeInfo, PortInfo
 from core.lib.network import NetworkAPIPath, NetworkAPIMethod
 
-from .task_coordinator import TaskCoordinator
+# from .task_coordinator import TaskCoordinator
 
 
 class Controller:
     def __init__(self):
-        self.task_coordinator = TaskCoordinator()
+        # self.task_coordinator = TaskCoordinator()
 
         self.is_display = Context.get_parameter('DISPLAY', direct=False)
 
@@ -130,27 +130,27 @@ class Controller:
             required_parallel_task_count = len(parallel_service_names)
             new_task = cur_task.fork_task(joint_service_name)
 
-            # node with parallel nodes should merge before step to next stage
-            if required_parallel_task_count > 1:
-                parallel_count = self.task_coordinator.store_task_data(new_task, joint_service_name)
-                # wait when some duplicated tasks (with parallel nodes) not arrive
-                if parallel_count != required_parallel_task_count:
-                    actions.append('wait')
-                    continue
-                # retrieve parallel nodes in redis
-                tasks = self.task_coordinator.retrieve_task_data(new_task.get_root_uuid(),
-                                                                 joint_service_name,
-                                                                 required_parallel_task_count)
-                # something wrong causes invalid task retrieving
-                if not tasks:
-                    actions.append('wait')
-                    continue
+            # # node with parallel nodes should merge before step to next stage
+            # if required_parallel_task_count > 1:
+            #     parallel_count = self.task_coordinator.store_task_data(new_task, joint_service_name)
+            #     # wait when some duplicated tasks (with parallel nodes) not arrive
+            #     if parallel_count != required_parallel_task_count:
+            #         actions.append('wait')
+            #         continue
+            #     # retrieve parallel nodes in redis
+            #     tasks = self.task_coordinator.retrieve_task_data(new_task.get_root_uuid(),
+            #                                                      joint_service_name,
+            #                                                      required_parallel_task_count)
+            #     # something wrong causes invalid task retrieving
+            #     if not tasks:
+            #         actions.append('wait')
+            #         continue
 
-                # merge parallel tasks
-                for task in tasks:
-                    new_task.merge_task(task)
-                LOGGER.debug(f"Merge task with services {[task.get_past_flow_index() for task in tasks]} "
-                             f"into task with service '{joint_service_name}'")
+            #     # merge parallel tasks
+            #     for task in tasks:
+            #         new_task.merge_task(task)
+            #     LOGGER.debug(f"Merge task with services {[task.get_past_flow_index() for task in tasks]} "
+            #                  f"into task with service '{joint_service_name}'")
 
             actions.append(self.submit_task(new_task))
 

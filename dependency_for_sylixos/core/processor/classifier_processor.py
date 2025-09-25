@@ -1,4 +1,3 @@
-import cv2
 
 from .processor import Processor
 
@@ -15,6 +14,8 @@ class ClassifierProcessor(Processor):
         self.classifier = Context.get_instance('Classifier')
 
     def __call__(self, task: Task):
+        import cv2
+
         data_file_path = task.get_file_path()
         cap = cv2.VideoCapture(data_file_path)
         content = task.get_prev_content()
