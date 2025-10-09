@@ -1,40 +1,30 @@
 import threading
 
-from fastapi import FastAPI, BackgroundTasks, UploadFile, File, Form
-
-from fastapi.routing import APIRoute
-from starlette.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
+from core.lib.network import SkyHTTPServer, sky_request, SkyBackgroundTasks
 from core.lib.common import Context, SystemConstant
 from core.lib.common import LOGGER, FileOps
-from core.lib.network import NodeInfo, PortInfo, http_request, merge_address, NetworkAPIMethod, NetworkAPIPath
+from core.lib.network import NodeInfo, PortInfo, merge_address, NetworkAPIMethod, NetworkAPIPath
 from core.lib.content import Task
 from core.lib.estimation import TimeEstimator
 
 
 class ProcessorServer:
     def __init__(self):
-        self.app = FastAPI(routes=[
-            APIRoute(NetworkAPIPath.PROCESSOR_PROCESS,
-                     self.process_service,
-                     response_class=JSONResponse,
-                     methods=[NetworkAPIMethod.PROCESSOR_PROCESS]
-                     ),
-            APIRoute(NetworkAPIPath.PROCESSOR_PROCESS_RETURN,
-                     self.process_return_service,
-                     response_class=JSONResponse,
-                     methods=[NetworkAPIMethod.PROCESSOR_PROCESS_RETURN]
-                     ),
-            APIRoute(NetworkAPIPath.PROCESSOR_QUEUE_LENGTH,
-                     self.query_queue_length,
-                     response_class=JSONResponse,
-                     methods=[NetworkAPIMethod.PROCESSOR_QUEUE_LENGTH]
-                     ),
-        ], log_level='trace', timeout=6000)
-
-        self.app.add_middleware(
-            CORSMiddleware, allow_origins=["*"], allow_credentials=True,
-            allow_methods=["*"], allow_headers=["*"],
+        self.app = SkyHTTPServer()
+        self.app.add_route(
+            path=NetworkAPIPath.PROCESSOR_PROCESS,
+            method=NetworkAPIMethod.PROCESSOR_PROCESS,
+            handler=self.process_service
+        )
+        self.app.add_route(
+            path=NetworkAPIPath.PROCESSOR_PROCESS_RETURN,
+            method=NetworkAPIMethod.PROCESSOR_PROCESS_RETURN,
+            handler=self.process_return_service
+        )
+        self.app.add_route(
+            path=NetworkAPIPath.PROCESSOR_QUEUE_LENGTH,
+            method=NetworkAPIMethod.PROCESSOR_QUEUE_LENGTH,
+            handler=self.query_queue_length
         )
 
         self.processor = Context.get_algorithm('PROCESSOR')
@@ -50,9 +40,15 @@ class ProcessorServer:
 
         threading.Thread(target=self.loop_process).start()
 
-    async def process_service(self, backtask: BackgroundTasks, file: UploadFile = File(...), data: str = Form(...)):
+    async def process_service(self, request, backtask: SkyBackgroundTasks,):
+        """
+        修改方案:file和form直接解析，backtask可以正常使用
+        """
+        file = self.app.parse_files_from_request(request=request)[0]
         file_data = await file.read()
+        data = self.app.parse_forms_from_request(request=request)[0]['data']
         cur_task = Task.deserialize(data)
+
         backtask.add_task(self.process_service_background, data, file_data)
         LOGGER.debug(f'[Monitor Task] (Process Request) '
                      f'Source: {cur_task.get_source_id()} / Task: {cur_task.get_task_id()} ')
@@ -65,10 +61,13 @@ class ProcessorServer:
         LOGGER.debug(f'[Monitor Task] (Process Request Background) '
                      f'Source: {cur_task.get_source_id()} / Task: {cur_task.get_task_id()} ')
 
-    async def process_return_service(self, file: UploadFile = File(...),
-                                     data: str = Form(...)):
+    async def process_return_service(self,request):
+
+        file = self.app.parse_files_from_request(request=request)[0]
         file_data = await file.read()
+        data = self.app.parse_forms_from_request(request=request)[0]['data']
         cur_task = Task.deserialize(data)
+
         LOGGER.info(f'[Process Return Background] Process task: source {cur_task.get_source_id()}  / '
                     f'task {cur_task.get_task_id()}')
         FileOps.save_data_file(cur_task, file_data)
@@ -117,6 +116,5 @@ class ProcessorServer:
         return new_task
 
     def send_result_back_to_controller(self, task):
-
-        http_request(url=self.controller_address, method=NetworkAPIMethod.CONTROLLER_RETURN,
-                     data={'data': task.serialize()})
+        sky_request(method=NetworkAPIMethod.CONTROLLER_RETURN, url=self.controller_address,
+                    data={'data': task.serialize()})

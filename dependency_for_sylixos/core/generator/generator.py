@@ -5,7 +5,7 @@ from core.lib.content import Task
 from core.lib.network import merge_address
 from core.lib.network import NodeInfo, PortInfo
 from core.lib.network import NetworkAPIPath, NetworkAPIMethod
-from core.lib.network import http_request
+from core.lib.network import sky_request
 from core.lib.estimation import TimeEstimator
 
 
@@ -43,10 +43,11 @@ class Generator:
 
     def request_schedule_policy(self):
         params = self.before_schedule_operation(self)
-        response = http_request(url=self.schedule_address,
-                                method=NetworkAPIMethod.SCHEDULER_SCHEDULE,
-                                data={'data': json.dumps(params)})
-        self.after_schedule_operation(self, response)
+        response = sky_request(url=self.schedule_address,
+                               method=NetworkAPIMethod.SCHEDULER_SCHEDULE,
+                               data={'data': json.dumps(params)})
+        # 这里需要注意一下,怀疑ASO有问题)
+        self.after_schedule_operation(self, response.json())
 
     @staticmethod
     def record_total_start_ts(cur_task: Task):
@@ -83,13 +84,13 @@ class Generator:
                                            port=self.controller_port,
                                            path=NetworkAPIPath.CONTROLLER_TASK)
         self.record_transmit_start_ts(cur_task)
-        http_request(url=controller_address,
-                     method=NetworkAPIMethod.CONTROLLER_TASK,
-                     data={'data': cur_task.serialize()},
-                     files={'file': (cur_task.get_file_path(),
-                                     open(cur_task.get_file_path(), 'rb'),
-                                     'multipart/form-data')}
-                     )
+        sky_request(url=controller_address,
+                    method=NetworkAPIMethod.CONTROLLER_TASK,
+                    data={'data': cur_task.serialize()},
+                    files={'file': (cur_task.get_file_path(),
+                                    open(cur_task.get_file_path(), 'rb'),
+                                    'multipart/form-data')}
+                    )
         LOGGER.info(f'[To Controller {dst_device}] source: {cur_task.get_source_id()}  '
                     f'task: {cur_task.get_task_id()}  '
                     f'file: {cur_task.get_file_path()}')
