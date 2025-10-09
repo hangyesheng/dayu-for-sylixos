@@ -1,6 +1,5 @@
 from typing import List
 
-from kubernetes import client, config
 from core.lib.common import reverse_key_value_in_dict, Context
 from core.lib.network import find_all_ips
 from core.lib.common import Context
@@ -37,6 +36,7 @@ class NodeInfo:
 
     @staticmethod
     def __extract_node_info():
+        from kubernetes import client, config
         config.load_incluster_config()
         v1 = client.CoreV1Api()
         nodes = v1.list_node().items

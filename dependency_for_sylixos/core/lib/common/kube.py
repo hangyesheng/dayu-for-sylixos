@@ -1,4 +1,4 @@
-from kubernetes import client, config
+
 from collections import defaultdict
 
 from core.lib.common import Context
@@ -11,6 +11,7 @@ class KubeConfig:
 
     @classmethod
     def _get_api(cls):
+        from kubernetes import client, config
         if not cls._api:
             config.load_incluster_config()
             cls._api = client.CoreV1Api()

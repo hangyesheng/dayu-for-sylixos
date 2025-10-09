@@ -1,4 +1,4 @@
-import kubernetes as k8s
+
 from core.lib.common import Context, SystemConstant
 
 
@@ -14,6 +14,8 @@ class PortInfo:
 
     @staticmethod
     def get_all_ports(keyword: str) -> dict:
+        import kubernetes as k8s
+        
         ports_dict = {}
         k8s.config.load_incluster_config()
         v1 = k8s.client.CoreV1Api()
