@@ -1,4 +1,4 @@
-import redis
+# import redis
 
 from core.lib.content import Task
 from core.lib.common import LOGGER, Context, SystemConstant

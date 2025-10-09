@@ -2,7 +2,6 @@ import abc
 import math
 import os.path
 import time
-import numpy as np
 
 from core.lib.common import ClassFactory, ClassType, LOGGER, FileOps, Context
 from core.lib.common import VideoOps
@@ -160,6 +159,7 @@ class CASVAAgent(BaseAgent, abc.ABC):
         self.acc_estimator = AccEstimator(gt_file_path)
 
     def calculate_drl_reward(self, evaluation_info):
+        import numpy as np
 
         acc_list = []
         transmit_delay_list = []

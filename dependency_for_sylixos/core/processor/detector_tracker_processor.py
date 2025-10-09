@@ -1,6 +1,5 @@
-import numpy as np
+
 from typing import List
-import cv2
 
 from .processor import Processor
 
@@ -21,6 +20,8 @@ class DetectorTrackerProcessor(Processor):
         self.frame_size = None
 
     def __call__(self, task: Task):
+        import cv2
+
         data_file_path = task.get_file_path()
         cap = cv2.VideoCapture(data_file_path)
         image_list = []
@@ -41,7 +42,7 @@ class DetectorTrackerProcessor(Processor):
 
         return task
 
-    def infer(self, images: List[np.ndarray]):
+    def infer(self, images):
         assert self.detector, 'No detector defined!'
         assert self.tracker, 'No tracker defined!'
 

@@ -1,7 +1,7 @@
 import os
 
 from core.lib.estimation import TimeEstimator
-from core.lib.network import http_request
+from core.lib.network import sky_request
 from core.lib.common import LOGGER
 from core.lib.common import Context
 from core.lib.common import SystemConstant
@@ -10,12 +10,12 @@ from core.lib.network import merge_address
 from core.lib.network import NodeInfo, PortInfo
 from core.lib.network import NetworkAPIPath, NetworkAPIMethod
 
-from .task_coordinator import TaskCoordinator
+# from .task_coordinator import TaskCoordinator
 
 
 class Controller:
     def __init__(self):
-        self.task_coordinator = TaskCoordinator()
+        # self.task_coordinator = TaskCoordinator()
 
         self.is_display = Context.get_parameter('DISPLAY', direct=False)
 
@@ -35,12 +35,12 @@ class Controller:
                                            port=self.controller_port,
                                            path=NetworkAPIPath.CONTROLLER_TASK)
 
-        http_request(url=controller_address,
-                     method=NetworkAPIMethod.CONTROLLER_TASK,
-                     data={'data': cur_task.serialize()},
-                     files={'file': (cur_task.get_file_path(),
-                                     open(cur_task.get_file_path(), 'rb'),
-                                     'multipart/form-data')})
+        sky_request(url=controller_address,
+                    method=NetworkAPIMethod.CONTROLLER_TASK,
+                    data={'data': cur_task.serialize()},
+                    files={'file': (cur_task.get_file_path(),
+                                    open(cur_task.get_file_path(), 'rb'),
+                                    'multipart/form-data')})
 
         LOGGER.info(f'[To Device {device}] source: {cur_task.get_source_id()}  '
                     f'task: {cur_task.get_task_id()} current service: {cur_task.get_flow_index()}')
@@ -62,13 +62,13 @@ class Controller:
                            f'task: {cur_task.get_task_id()} file: {cur_task.get_file_path()}')
             return
 
-        http_request(url=service_address,
-                     method=NetworkAPIMethod.PROCESSOR_PROCESS,
-                     data={'data': cur_task.serialize()},
-                     files={'file': (cur_task.get_file_path(),
-                                     open(cur_task.get_file_path(), 'rb'),
-                                     'multipart/form-data')}
-                     )
+        sky_request(url=service_address,
+                    method=NetworkAPIMethod.PROCESSOR_PROCESS,
+                    data={'data': cur_task.serialize()},
+                    files={'file': (cur_task.get_file_path(),
+                                    open(cur_task.get_file_path(), 'rb'),
+                                    'multipart/form-data')}
+                    )
 
         LOGGER.info(f'[To Service {service}] source: {cur_task.get_source_id()}  '
                     f'task: {cur_task.get_task_id()} current service: {cur_task.get_flow_index()}')
@@ -81,10 +81,10 @@ class Controller:
             return
         file_content = open(cur_task.get_file_path(), 'rb') if self.is_display else b''
 
-        http_request(url=self.distribute_address,
-                     method=NetworkAPIMethod.DISTRIBUTOR_DISTRIBUTE,
-                     files={'file': (cur_task.get_file_path(), file_content, 'multipart/form-data')},
-                     data={'data': cur_task.serialize()})
+        sky_request(url=self.distribute_address,
+                    method=NetworkAPIMethod.DISTRIBUTOR_DISTRIBUTE,
+                    files={'file': (cur_task.get_file_path(), file_content, 'multipart/form-data')},
+                    data={'data': cur_task.serialize()})
 
         LOGGER.info(f'[To Distributor] source: {cur_task.get_source_id()}  task: {cur_task.get_task_id()} '
                     f'current service: {cur_task.get_flow_index()}')
@@ -130,27 +130,27 @@ class Controller:
             required_parallel_task_count = len(parallel_service_names)
             new_task = cur_task.fork_task(joint_service_name)
 
-            # node with parallel nodes should merge before step to next stage
-            if required_parallel_task_count > 1:
-                parallel_count = self.task_coordinator.store_task_data(new_task, joint_service_name)
-                # wait when some duplicated tasks (with parallel nodes) not arrive
-                if parallel_count != required_parallel_task_count:
-                    actions.append('wait')
-                    continue
-                # retrieve parallel nodes in redis
-                tasks = self.task_coordinator.retrieve_task_data(new_task.get_root_uuid(),
-                                                                 joint_service_name,
-                                                                 required_parallel_task_count)
-                # something wrong causes invalid task retrieving
-                if not tasks:
-                    actions.append('wait')
-                    continue
+            # # node with parallel nodes should merge before step to next stage
+            # if required_parallel_task_count > 1:
+            #     parallel_count = self.task_coordinator.store_task_data(new_task, joint_service_name)
+            #     # wait when some duplicated tasks (with parallel nodes) not arrive
+            #     if parallel_count != required_parallel_task_count:
+            #         actions.append('wait')
+            #         continue
+            #     # retrieve parallel nodes in redis
+            #     tasks = self.task_coordinator.retrieve_task_data(new_task.get_root_uuid(),
+            #                                                      joint_service_name,
+            #                                                      required_parallel_task_count)
+            #     # something wrong causes invalid task retrieving
+            #     if not tasks:
+            #         actions.append('wait')
+            #         continue
 
-                # merge parallel tasks
-                for task in tasks:
-                    new_task.merge_task(task)
-                LOGGER.debug(f"Merge task with services {[task.get_past_flow_index() for task in tasks]} "
-                             f"into task with service '{joint_service_name}'")
+            #     # merge parallel tasks
+            #     for task in tasks:
+            #         new_task.merge_task(task)
+            #     LOGGER.debug(f"Merge task with services {[task.get_past_flow_index() for task in tasks]} "
+            #                  f"into task with service '{joint_service_name}'")
 
             actions.append(self.submit_task(new_task))
 

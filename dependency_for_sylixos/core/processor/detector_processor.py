@@ -1,6 +1,5 @@
-import numpy as np
+
 from typing import List
-import cv2
 
 from .processor import Processor
 
@@ -20,7 +19,12 @@ class DetectorProcessor(Processor):
         self.frame_size = None
 
     def __call__(self, task: Task):
+        import cv2
+
         data_file_path = task.get_file_path()
+
+        # 调用ecs_yolo_iamge, 可能需要从meta_data中知道有几帧，然后subsribe后接收到对应数量的帧的结果，并把结果转换回现在的格式再返回
+
         cap = cv2.VideoCapture(data_file_path)
         image_list = []
         success, frame = cap.read()
@@ -35,12 +39,15 @@ class DetectorProcessor(Processor):
             LOGGER.critical(f'file_path: {task.get_file_path()}')
             return None
         result = self.infer(image_list)
+
+        # 到这为止
+
         task = self.get_scenario(result, task)
         task.set_current_content(convert_ndarray_to_list(result))
 
         return task
 
-    def infer(self, images: List[np.ndarray]):
+    def infer(self, images):
         assert self.detector, 'No detector defined!'
 
         LOGGER.debug(f'[Batch Size] Car detection batch: {len(images)}')

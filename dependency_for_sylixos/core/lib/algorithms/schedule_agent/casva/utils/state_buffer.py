@@ -1,4 +1,4 @@
-import numpy as np
+
 from core.lib.common import LOGGER
 
 
@@ -40,6 +40,7 @@ class StateBuffer:
         self.tasks.append(task)
 
     def get_state_buffer(self):
+        import numpy as np
 
         resources = self.resources.copy()
 
@@ -88,6 +89,8 @@ class StateBuffer:
 
     @staticmethod
     def resample_buffer(buffer, size):
+        import numpy as np
+        
         buffer_length = len(buffer)
         assert buffer_length != 0, 'Resample buffer size is 0!'
 

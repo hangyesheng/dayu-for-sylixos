@@ -1,7 +1,6 @@
 import abc
 import os.path
 import time
-import numpy as np
 
 from core.lib.common import ClassFactory, ClassType, LOGGER, FileOps, Context, VideoOps
 from core.lib.estimation import AccEstimator, OverheadEstimator
@@ -102,7 +101,8 @@ class HEIDRLAgent(BaseAgent, abc.ABC):
     def map_drl_action_to_decision(self, action):
         """
         map [-1, 1] to {-1, 0, 1}
-        """
+        """   
+        import numpy as np
 
         self.intermediate_decision = [int(np.sign(a)) if abs(a) > 0.3 else 0 for a in action]
 
@@ -157,6 +157,8 @@ class HEIDRLAgent(BaseAgent, abc.ABC):
         self.acc_estimator = AccEstimator(gt_file_path)
 
     def calculate_drl_reward(self, evaluation_info):
+        import numpy as np
+
         delay_bias_list = []
         acc_list = []
 
@@ -245,6 +247,8 @@ class HEIDRLAgent(BaseAgent, abc.ABC):
                 cur_step = 0
 
     def update_scenario(self, scenario):
+        import numpy as np
+        
         try:
             object_number = np.mean(scenario['obj_num'])
             object_size = np.mean(scenario['obj_size'])

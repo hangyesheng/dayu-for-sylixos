@@ -1,6 +1,5 @@
 import abc
 import time
-import numpy as np
 
 from core.lib.common import ClassFactory, ClassType, Context, LOGGER
 from core.lib.content import Task
@@ -147,6 +146,8 @@ class CEVASAgent(BaseAgent, abc.ABC):
         return self.overhead_estimator.get_latest_overhead()
 
     def update_task(self, task):
+        import numpy as np
+
         avg_num = np.mean(task.get_scenario_data()['obj_num'])
         file_size = task.get_tmp_data()['file_size']
         self.data_time_sequence.append([avg_num, file_size])

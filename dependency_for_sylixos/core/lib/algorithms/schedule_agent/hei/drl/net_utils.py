@@ -1,8 +1,10 @@
-import torch.nn as nn
+
 
 
 def build_net(layer_shape, activation, output_activation):
     """Build net with for loop"""
+    import torch.nn as nn
+
     layers = []
     for j in range(len(layer_shape) - 1):
         act = activation if j < len(layer_shape) - 2 else output_activation
@@ -11,6 +13,8 @@ def build_net(layer_shape, activation, output_activation):
 
 
 def build_conv1d_net(input_channels, hid_channels, kernel_size, activation):
+    import torch.nn as nn
+    
     layers = []
     for i in range(len(hid_channels)):
         layers += [nn.Conv1d(in_channels=input_channels if i == 0 else hid_channels[i - 1],

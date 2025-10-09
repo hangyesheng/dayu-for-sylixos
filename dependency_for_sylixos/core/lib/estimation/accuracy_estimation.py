@@ -1,4 +1,3 @@
-import numpy as np
 
 
 class AccEstimator:
@@ -8,6 +7,8 @@ class AccEstimator:
             self.data_gt = gt_f.readlines()
 
     def calculate_accuracy(self, frame_hash_codes, predictions, resolution_ratio, fps_ratio):
+        import numpy as np
+
         acc_list = []
         gt_frames_index_list = self.find_gt_frames_index(fps_ratio, frame_hash_codes)
 
@@ -49,6 +50,8 @@ class AccEstimator:
         return gt_frames_index_list
 
     def get_frame_ground_truth(self, index, resolution_ratio):
+        import numpy as np
+        
         if index >= len(self.data_gt):
             return []
 
@@ -93,6 +96,8 @@ class AccEstimator:
 
     @staticmethod
     def compute_ap(recalls, precisions):
+        import numpy as np
+        
         recalls = np.concatenate(([0.0], recalls, [1.0]))
         precisions = np.concatenate(([0.0], precisions, [0.0]))
         for i in range(precisions.size - 1, 0, -1):
@@ -108,6 +113,8 @@ class AccEstimator:
         ground_truths: list of dicts with keys {'bbox': [x1, y1, x2, y2], 'class': class_id}
         """
 
+        import numpy as np
+        
         # no object in scene
         if not ground_truths:
             return 1
