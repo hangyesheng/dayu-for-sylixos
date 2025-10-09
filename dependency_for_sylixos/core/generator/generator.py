@@ -46,7 +46,7 @@ class Generator:
         response = sky_request(url=self.schedule_address,
                                method=NetworkAPIMethod.SCHEDULER_SCHEDULE,
                                data={'data': json.dumps(params)})
-        # 这里需要注意一下,怀疑ASO有问题)
+        
         self.after_schedule_operation(self, response.json())
 
     @staticmethod
