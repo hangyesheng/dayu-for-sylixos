@@ -6,7 +6,7 @@
 @Date    ：2025/8/26 19:45 
 '''
 
-import core.lib.network.sky_vsoa.vsoa as vsoa
+import vsoa
 import threading
 from typing import Callable
 # from core.lib.common import Context, SystemConstant, LOGGER, FileOps
