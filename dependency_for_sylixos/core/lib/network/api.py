@@ -48,6 +48,10 @@ class NetworkAPIPath:
     BACKEND_DATASOURCE_STATE = '/datasource_state'
     BACKEND_RESET_DATASOURCE = '/reset_datasource'
 
+    ECS_MANAGER_INSTALL = '/install'
+    ECS_MANAGER_DELETE = '/delete'
+    ECS_MANAGER_EXISTS = '/exists'
+
 
 class NetworkAPIMethod:
     CONTROLLER_TASK = 'POST'
@@ -98,5 +102,9 @@ class NetworkAPIMethod:
     BACKEND_EDGE_NODE = 'GET'
     BACKEND_DATASOURCE_STATE = 'GET'
     BACKEND_RESET_DATASOURCE = 'POST'
+
+    ECS_MANAGER_INSTALL = 'POST'
+    ECS_MANAGER_DELETE = 'POST'
+    ECS_MANAGER_EXISTS = 'GET'
 
 

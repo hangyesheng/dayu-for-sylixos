@@ -1,0 +1,27 @@
+ARCH arm64
+
+MOUNT /bin/javascript /bin/javascript rx
+
+MOUNT /lib /lib rx
+
+MOUNT /qt /qt rx
+
+MOUNT /usr/bin /usr/bin rx
+
+MOUNT /usr/lib /usr/lib rx
+
+ENV PATH=/usr/bin:/bin:/usr/pkg/sbin:/sbin:/usr/local/bin
+
+ENV LD_LIBRARY_PATH=/qt/lib:/usr/lib:/lib:/usr/local/lib:/lib/jsre:/lib/vsoa
+
+
+
+ENV TZ=Asia/Shanghai
+
+COPY ../../dependency_for_sylixos/core /apps/ecs_manager/core
+
+WORKDIR /apps/ecs_manager
+COPY ../../components_for_sylixos/ecs_manager /apps/ecs_manager
+
+CMD python /apps/ecs_manager/main.py
+
