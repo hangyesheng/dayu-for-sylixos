@@ -29,11 +29,11 @@ class ControllerServer:
     async def submit_task(self, request, backtask: SkyBackgroundTasks, ):
         file = self.app.parse_files_from_request(request=request)[0]
         file_data = await file.read()
-        data = self.app.parse_forms_from_request(request=request)[0]['data']
+        data = self.app.parse_data_from_request(request=request)
         backtask.add_task(self.submit_task_background, data, file_data)
 
     async def process_return(self, request, backtask: SkyBackgroundTasks):
-        data = self.app.parse_forms_from_request(request=request)[0]['data']
+        data = self.app.parse_data_from_request(request=request)
         backtask.add_task(self.process_return_background, data)
 
     def submit_task_background(self, data, file_data):
