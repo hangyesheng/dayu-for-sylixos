@@ -115,8 +115,33 @@ class SkyHTTPServer:
             return [{"name": k, "value": v[0] if len(v) == 1 else v} for k, v in parsed.items()]
         except Exception:
             return []
+        
+    def parse_from_forms(self, key: str, forms: List[Dict[str, Any]]) -> Any:
+        # 检查是否为空
+        if not forms:
+            raise ValueError("未收到表单数据")
 
-    def parse_files_from_request(self,request) -> List[SkyUploadFile]:
+        # 在 forms 列表中查找 name == key 的项
+        data_item = None
+        for item in forms:
+            if item.get("name") == key:
+                data_item = item
+                break
+
+        if not data_item:
+            raise ValueError(f"未找到名为 {key} 的表单字段")
+
+        # 取出 value 字段, 解析为 JSON
+        data_json_str = data_item['value']
+        return data_json_str
+        
+    def parse_data_from_request(self, request) -> Any:
+        forms = self.parse_forms_from_request(request=request)
+        data_json_str = self.parse_from_forms(key="data", forms=forms)
+        data = json.loads(data_json_str)
+        return data
+
+    def parse_files_from_request(self, request) -> List[SkyUploadFile]:
         """
         解析 multipart/form-data 请求中的文件，返回内存中的 SkyUploadFile 对象列表
         """

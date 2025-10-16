@@ -46,7 +46,7 @@ class ProcessorServer:
         """
         file = self.app.parse_files_from_request(request=request)[0]
         file_data = await file.read()
-        data = self.app.parse_forms_from_request(request=request)[0]['data']
+        data = self.app.parse_data_from_request(request=request)
         cur_task = Task.deserialize(data)
 
         backtask.add_task(self.process_service_background, data, file_data)
@@ -65,7 +65,7 @@ class ProcessorServer:
 
         file = self.app.parse_files_from_request(request=request)[0]
         file_data = await file.read()
-        data = self.app.parse_forms_from_request(request=request)[0]['data']
+        data = self.app.parse_data_from_request(request=request)
         cur_task = Task.deserialize(data)
 
         LOGGER.info(f'[Process Return Background] Process task: source {cur_task.get_source_id()}  / '
