@@ -6,7 +6,7 @@
 @Date    ：2025/8/26 19:45
 '''
 
-import vsoa
+import core.lib.network.sky_vsoa.vsoa as vsoa
 import threading
 from typing import Callable, Dict
 

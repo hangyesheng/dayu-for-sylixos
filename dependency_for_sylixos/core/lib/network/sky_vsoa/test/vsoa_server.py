@@ -7,7 +7,7 @@
 '''
 import threading
 import time
-import vsoa
+import core.lib.network.sky_vsoa.vsoa as vsoa
 
 
 def main() -> None:
