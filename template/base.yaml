@@ -17,6 +17,9 @@ datasource:
   node: edgex1
   data-root: "/data/datasource/"
   play-mode: cycle
+backend:
+  ecsm-host: 114.212.81.186
+  ecsm-port: 13001
 scheduler-policies:
   !include scheduler_policies.yaml
 services:

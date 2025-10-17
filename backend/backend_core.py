@@ -271,6 +271,7 @@ class BackendCore:
                 (r'^edgexn(\d+)$', 1),
                 (r'^edgex(\d+)$', 2),
                 (r'^edgen(\d+)$', 3),
+                (r'^edgeADP(\d+)$', 4),
             ]
             for pattern, group in patterns:
                 match = re.match(pattern, name)

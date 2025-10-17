@@ -8,7 +8,7 @@ def merge_address(ip: str, protocol: str = 'http', port: Union[int, str] = None,
     eg: http://127.0.0.1:9000/submit
     """
 
-    path = path.replace('/', '')
+    path = path[1:] if path is not None and path.startswith('/') else path
 
     port_divider = '' if port is None else ':'
     path_divider = '' if path is None else '/'

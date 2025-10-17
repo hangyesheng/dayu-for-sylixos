@@ -47,6 +47,7 @@ class NetworkAPIPath:
     BACKEND_EDGE_NODE = '/edge_node'
     BACKEND_DATASOURCE_STATE = '/datasource_state'
     BACKEND_RESET_DATASOURCE = '/reset_datasource'
+    BACKEND_ECSM_NODE = '/api/v1/node?pageNum=1&pageSize=10'
 
 
 class NetworkAPIMethod:
@@ -98,5 +99,6 @@ class NetworkAPIMethod:
     BACKEND_EDGE_NODE = 'GET'
     BACKEND_DATASOURCE_STATE = 'GET'
     BACKEND_RESET_DATASOURCE = 'POST'
+    BACKEND_ECSM_NODE = 'GET'
 
 

@@ -163,6 +163,10 @@ spec:
           - env:
             - name: GUNICORN_PORT
               value: "8000"
+            - name: ECSM_HOST
+              value: "$BACKEND_ECSM_HOST"
+            - name: ECSM_PORT
+              value: "$BACKEND_ECSM_PORT"
             image: $REGISTRY/$REPOSITORY/backend:$TAG
             imagePullPolicy: IfNotPresent
             name: backend
@@ -403,6 +407,8 @@ import_config() {
     DATASOURCE_DATA_ROOT=$(yq e '.datasource.data-root' "$TMP_FILE")
     DATASOURCE_NODE=$(yq e '.datasource.node' "$TMP_FILE")
     DATASOURCE_PLAY_MODE=$(yq e '.datasource.play-mode' "$TMP_FILE")
+    BACKEND_ECSM_HOST=$(yq e '.backend.ecsm-host' "$TMP_FILE")
+    BACKEND_ECSM_PORT=$(yq e '.backend.ecsm-port' "$TMP_FILE")
 
     rm "$TMP_FILE"
 
@@ -491,6 +497,8 @@ display_config() {
     echo "  Master Node IP: $CLOUD_IP"
     echo "  Kubernetes Service Host: $KUBERNETES_SERVICE_HOST"
     echo "  Kubernetes Service Port: $KUBERNETES_SERVICE_PORT"
+    echo "  Backend ECSM Host: $BACKEND_ECSM_HOST"
+    echo "  Backend ECSM Port: $BACKEND_ECSM_PORT"
     echo "----------------------------------------"
 }
 

@@ -3,7 +3,10 @@ from typing import List
 from kubernetes import client, config
 from core.lib.common import reverse_key_value_in_dict, Context
 from core.lib.network import find_all_ips
-from core.lib.common import Context
+from .client import http_request
+from .utils import merge_address
+from .api import NetworkAPIPath, NetworkAPIMethod
+from core.lib.common import Context, LOGGER
 
 
 class NodeInfo:
@@ -37,6 +40,7 @@ class NodeInfo:
 
     @staticmethod
     def __extract_node_info():
+        # 通过 kubernetes 获取节点信息
         config.load_incluster_config()
         v1 = client.CoreV1Api()
         nodes = v1.list_node().items
@@ -55,6 +59,46 @@ class NodeInfo:
                 node_role[node_name] = 'edge'
             if 'node-role.kubernetes.io/master' in node.metadata.labels:
                 node_role[node_name] = 'cloud'
+
+
+        # 通过 http_request 获取 ECSM边缘集群 节点信息
+        ecsm_host = str(Context.get_parameter('ECSM_HOST'))
+        ecsm_port = str(Context.get_parameter('ECSM_PORT'))
+        remote_api_url = merge_address(ip=ecsm_host, 
+                                       port=ecsm_port, 
+                                       path=NetworkAPIPath.BACKEND_ECSM_NODE)
+
+        try:
+            # 调用封装好的 http_request 方法
+            response_data = http_request(
+                url=remote_api_url,
+                method=NetworkAPIMethod.BACKEND_ECSM_NODE
+            )
+
+            # 检查返回值是否有效
+            if not response_data:
+                LOGGER.warning("Empty response from remote API.")
+            elif isinstance(response_data, dict) and response_data.get('status') == 200:
+                remote_nodes = response_data['data']['list']
+                for remote_node in remote_nodes:
+                    node_name = remote_node['name']
+                    address = remote_node['address']  # 如 "192.168.200.101:1112"
+                    ip = address.split(':')[0]  # 提取 IP
+
+                    # 避免覆盖已有节点
+                    if node_name not in node_dict:
+                        node_dict[node_name] = ip
+                        node_role[node_name] = 'edge'  # 统一标记为边缘节点
+                        LOGGER.info(f"Added remote edge node: {node_name} -> {ip}")
+                    else:
+                        LOGGER.warning(f"Remote node {node_name} already exists. Skipping.")
+            else:
+                error_msg = response_data.get('message', 'Unknown error') if isinstance(response_data, dict) else 'Invalid response format'
+                LOGGER.warning(f"Remote API returned non-success status or invalid data: {error_msg}")
+
+        except Exception as e:
+            LOGGER.warning(f"Failed to fetch or parse remote node info: {e}")
+
         node_dict_reverse = reverse_key_value_in_dict(node_dict)
 
         return node_dict, node_dict_reverse, node_role
