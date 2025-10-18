@@ -10,6 +10,9 @@ class TemplateHelper:
 
     def load_template_config(self, policy, service_dict):
         raise NotImplementedError()
+    
+    def finetune_parameters(self, template_dict, source_deploy, edge_nodes, cloud_node, scopes=None):
+        raise NotImplementedError()
 
     def load_base_info(self):
         base_template_path = os.path.join(self.templates_dir, 'base.yaml')

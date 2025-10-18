@@ -53,6 +53,8 @@ class BackendCore:
         self.save_yaml_path = 'resources.yaml'
         self.log_file_path = 'log.json'
 
+        self.cur_ecs_service_id_list = []
+
         self.default_visualization_image = 'default_visualization.png'
 
         self.parse_base_info()
@@ -92,11 +94,12 @@ class BackendCore:
         first_stage_components = ['scheduler', 'distributor', 'monitor', 'controller']
         second_stage_components = ['generator', 'processor']
 
+        # first stage: kube deploy
         LOGGER.info(f'[First Deployment Stage] deploy components:{first_stage_components}')
-        first_docs_list = self.kube_template_helper.finetune_yaml_parameters(kube_dict, source_deploy, kube_edge_nodes, cloud_node,
+        first_yaml_list = self.kube_template_helper.finetune_parameters(kube_dict, source_deploy, kube_edge_nodes, cloud_node,
                                                                         scopes=first_stage_components)
         try:
-            result, msg = self.install_yaml_templates(first_docs_list)
+            result, msg = self.install_yaml_templates(first_yaml_list)
         except timeout_exceptions.FunctionTimedOut as e:
             LOGGER.warning(f'Parse and apply templates failed: {str(e)}')
             result = False
@@ -106,15 +109,33 @@ class BackendCore:
             result = False
             msg = 'unexpected system error, please refer to logs in backend'
         finally:
-            self.save_component_yaml(first_docs_list)
+            self.save_component_yaml(first_yaml_list)
+        if not result:
+            return False, msg
+        
+        # first stage: ecs deploy
+        first_json_list = self.ecs_template_helper.finetune_parameters(ecs_dict, source_deploy, ecs_edge_nodes, cloud_node,
+                                                                        scopes=first_stage_components)
+        try:
+            result, msg, first_service_id_list = self.install_json_templates(first_json_list)
+            self.save_component_ecs_service_id(first_service_id_list)
+        except timeout_exceptions.FunctionTimedOut as e:
+            LOGGER.warning(f'Parse and apply templates failed: {str(e)}')
+            result = False
+            msg = 'first-stage install timeout after 60 seconds'
+        except Exception as e:
+            LOGGER.warning(f'Parse and apply templates failed: {str(e)}')
+            result = False
+            msg = 'unexpected system error, please refer to logs in backend'
         if not result:
             return False, msg
 
+        # second stage: kube deploy
         LOGGER.info(f'[Second Deployment Stage] deploy components:{second_stage_components}')
-        second_docs_list = self.kube_template_helper.finetune_yaml_parameters(kube_dict, source_deploy, kube_edge_nodes, cloud_node,
+        second_yaml_list = self.kube_template_helper.finetune_parameters(kube_dict, source_deploy, kube_edge_nodes, cloud_node,
                                                                          scopes=second_stage_components)
         try:
-            result, msg = self.install_yaml_templates(second_docs_list)
+            result, msg = self.install_yaml_templates(second_yaml_list)
         except timeout_exceptions.FunctionTimedOut as e:
             LOGGER.warning(f'Parse and apply templates failed: {str(e)}')
             result = False
@@ -124,7 +145,24 @@ class BackendCore:
             result = False
             msg = 'unexpected system error, please refer to logs in backend'
         finally:
-            self.save_component_yaml(first_docs_list + second_docs_list)
+            self.save_component_yaml(first_yaml_list + second_yaml_list)
+        if not result:
+            return False, msg
+
+        # second stage: ecs deploy
+        second_json_list = self.ecs_template_helper.finetune_parameters(ecs_dict, source_deploy, ecs_edge_nodes, cloud_node,
+                                                                         scopes=second_stage_components)
+        try:
+            result, msg, second_service_id_list = self.install_json_templates(second_json_list)
+            self.save_component_ecs_service_id(second_service_id_list)
+        except timeout_exceptions.FunctionTimedOut as e:
+            LOGGER.warning(f'Parse and apply templates failed: {str(e)}')
+            result = False
+            msg = 'second-stage install timeout after 60 seconds'
+        except Exception as e:
+            LOGGER.warning(f'Parse and apply templates failed: {str(e)}')
+            result = False
+            msg = 'unexpected system error, please refer to logs in backend'
         if not result:
             return False, msg
 
@@ -143,8 +181,22 @@ class BackendCore:
             LOGGER.exception(e)
             result = False
             msg = f'unexpected system error, please refer to logs in backend'
+        if not result:
+            return result, msg
 
-        return result, msg
+        ecs_service_id_list = self.get_ecs_service_id_list()
+        try:
+            result, msg = self.uninstall_json_templates(ecs_service_id_list)
+        except timeout_exceptions.FunctionTimedOut as e:
+            msg = 'timeout after 120 seconds'
+            result = False
+            LOGGER.warning(f'Uninstall services failed: {msg}')
+        except Exception as e:
+            LOGGER.warning(f'Uninstall services failed: {str(e)}')
+        if not result:
+            return result, msg
+
+        return True, 'Uninstall services successfully'
 
     @timeout(120)
     def uninstall_yaml_templates(self, yaml_docs):
@@ -165,6 +217,26 @@ class BackendCore:
     def save_component_yaml(self, docs_list):
         self.cur_yaml_docs = docs_list
         YamlOps.write_all_yaml(docs_list, self.save_yaml_path)
+
+    @timeout(120)
+    def uninstall_json_templates(self, service_id_list):
+        # todo: 请求ecsm删除服务
+        res = False
+
+        return res, '' if res else 'ecs api error'
+
+    @timeout(60)
+    def install_json_templates(self, json_docs):
+        if not json_docs:
+            return False, 'components json data is empty', []
+        
+        # todo: 请求ecsm创建服务
+        _result = False
+
+        return _result, '' if _result else 'ecs api error', []
+
+    def save_component_ecs_service_id(self, service_id_list):
+        self.cur_ecs_service_id_list.extend(service_id_list)
 
     def extract_service_from_source_deployment(self, source_deploy):
         service_dict = {}
@@ -204,6 +276,12 @@ class BackendCore:
     def clear_yaml_docs(self):
         self.cur_yaml_docs = None
         FileOps.remove_file(self.save_yaml_path)
+
+    def get_ecs_service_id_list(self):
+        return self.cur_ecs_service_id_list
+
+    def clear_ecs_service_id(self):
+        self.cur_ecs_service_id_list = []
 
     def find_service_by_id(self, service_id):
         for service in self.services:

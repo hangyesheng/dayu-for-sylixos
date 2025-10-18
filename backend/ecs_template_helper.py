@@ -11,6 +11,10 @@ class ECSTemplateHelper(TemplateHelper):
         template_dict = self._check_and_modify_yaml_dict(yaml_dict)
         return template_dict
     
+    def finetune_parameters(self, template_dict, source_deploy, edge_nodes, cloud_node, scopes=None):
+        # todo: 请求ecsm获取原始配置文件，并进行修改与包装
+        raise NotImplementedError()
+
     def _check_and_modify_yaml_dict(self, yaml_dict):
         # 1. 定义支持的 image 值
         supported_images = ['generator', 'controller', 'car-detection', 'face-detection']

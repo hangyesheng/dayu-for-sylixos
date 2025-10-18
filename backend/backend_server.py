@@ -515,6 +515,7 @@ class BackendServer:
             msg = f'unexpected system error, please refer to logs in backend'
 
         self.server.clear_yaml_docs()
+        self.server.clear_ecs_service_id()
 
         if result:
             return {'state': 'success', 'msg': 'Uninstall services successfully'}

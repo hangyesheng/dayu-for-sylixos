@@ -18,6 +18,23 @@ class KubeTemplateHelper(TemplateHelper):
         yaml_dict.update(self.load_policy_apply_yaml(policy))
         yaml_dict.update({'processor': self.load_application_apply_yaml(service_dict)})
         return yaml_dict
+    
+    def finetune_parameters(self, template_dict, source_deploy, edge_nodes, cloud_node, scopes=None):
+        docs_list = []
+        if not scopes or 'generator' in scopes:
+            docs_list.append(self.finetune_generator_yaml(template_dict['generator'], source_deploy))
+        if not scopes or 'controller' in scopes:
+            docs_list.append(self.finetune_controller_yaml(template_dict['controller'], edge_nodes, cloud_node))
+        if not scopes or 'distributor' in scopes:
+            docs_list.append(self.finetune_distributor_yaml(template_dict['distributor'], cloud_node))
+        if not scopes or 'scheduler' in scopes:
+            docs_list.append(self.finetune_scheduler_yaml(template_dict['scheduler'], cloud_node))
+        if not scopes or 'monitor' in scopes:
+            docs_list.append(self.finetune_monitor_yaml(template_dict['monitor'], edge_nodes, cloud_node))
+        if not scopes or 'processor' in scopes:
+            docs_list.extend(self.finetune_processor_yaml(template_dict['processor'], cloud_node, source_deploy))
+
+        return docs_list
 
     def fill_template(self, yaml_doc, component_name):
         base_info = self.load_base_info()
@@ -129,22 +146,6 @@ class KubeTemplateHelper(TemplateHelper):
 
         return template_doc
 
-    def finetune_yaml_parameters(self, yaml_dict, source_deploy, edge_nodes, cloud_node, scopes=None):
-        docs_list = []
-        if not scopes or 'generator' in scopes:
-            docs_list.append(self.finetune_generator_yaml(yaml_dict['generator'], source_deploy))
-        if not scopes or 'controller' in scopes:
-            docs_list.append(self.finetune_controller_yaml(yaml_dict['controller'], edge_nodes, cloud_node))
-        if not scopes or 'distributor' in scopes:
-            docs_list.append(self.finetune_distributor_yaml(yaml_dict['distributor'], cloud_node))
-        if not scopes or 'scheduler' in scopes:
-            docs_list.append(self.finetune_scheduler_yaml(yaml_dict['scheduler'], cloud_node))
-        if not scopes or 'monitor' in scopes:
-            docs_list.append(self.finetune_monitor_yaml(yaml_dict['monitor'], edge_nodes, cloud_node))
-        if not scopes or 'processor' in scopes:
-            docs_list.extend(self.finetune_processor_yaml(yaml_dict['processor'], cloud_node, source_deploy))
-
-        return docs_list
 
     def finetune_generator_yaml(self, yaml_doc, source_deploy):
         scheduler_hostname = NodeInfo.get_cloud_node()
