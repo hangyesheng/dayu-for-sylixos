@@ -48,6 +48,7 @@ class NetworkAPIPath:
     BACKEND_DATASOURCE_STATE = '/datasource_state'
     BACKEND_RESET_DATASOURCE = '/reset_datasource'
     BACKEND_ECSM_NODE = '/api/v1/node?pageNum=1&pageSize=10'
+    BACKEND_ECSM_IMAGE_CONFIG = '/api/v1/image/config'
 
 
 class NetworkAPIMethod:
@@ -100,5 +101,6 @@ class NetworkAPIMethod:
     BACKEND_DATASOURCE_STATE = 'GET'
     BACKEND_RESET_DATASOURCE = 'POST'
     BACKEND_ECSM_NODE = 'GET'
+    BACKEND_ECSM_IMAGE_CONFIG = 'GET'
 
 
