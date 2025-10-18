@@ -88,7 +88,7 @@ class NodeInfo:
                     # 避免覆盖已有节点
                     if node_name not in node_dict:
                         node_dict[node_name] = ip
-                        node_role[node_name] = 'edge'  # 统一标记为边缘节点
+                        node_role[node_name] = 'edge-sylixos'  # 统一标记为边缘节点，但是额外标记为sylixos
                         LOGGER.info(f"Added remote edge node: {node_name} -> {ip}")
                     else:
                         LOGGER.warning(f"Remote node {node_name} already exists. Skipping.")
@@ -141,7 +141,7 @@ class NodeInfo:
         node_role = NodeInfo.get_node_info_role()
         edge_nodes = []
         for hostname in node_role:
-            if node_role[hostname] == 'edge':
+            if node_role[hostname] == 'edge' or node_role[hostname] == 'edge-sylixos':
                 edge_nodes.append(hostname)
         return edge_nodes
 

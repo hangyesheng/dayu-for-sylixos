@@ -97,7 +97,7 @@ class NodeInfo:
         node_role = NodeInfo.get_node_info_role()
         edge_nodes = []
         for hostname in node_role:
-            if node_role[hostname] == 'edge':
+            if node_role[hostname] == 'edge' or node_role[hostname] == 'edge-sylixos':
                 edge_nodes.append(hostname)
         return edge_nodes
 

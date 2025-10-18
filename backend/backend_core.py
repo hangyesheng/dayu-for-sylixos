@@ -281,7 +281,8 @@ class BackendCore:
             return len(patterns), 0
 
         node_role = NodeInfo.get_node_info_role()
-        edge_nodes = [{'name': node_name} for node_name in node_role if node_role[node_name] == 'edge']
+        edge_nodes = [{'name': node_name} for node_name in node_role 
+                      if node_role[node_name] == 'edge' or node_role[node_name] == 'edge-sylixos']
         edge_nodes.sort(key=sort_key)
         return edge_nodes
 
