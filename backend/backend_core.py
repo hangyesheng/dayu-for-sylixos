@@ -12,12 +12,14 @@ from core.lib.network import http_request, NodeInfo, PortInfo, merge_address, Ne
 
 from kube_helper import KubeHelper
 from kube_template_helper import KubeTemplateHelper
+from ecs_template_helper import ECSTemplateHelper
 
 
 class BackendCore:
     def __init__(self):
 
         self.kube_template_helper = KubeTemplateHelper(Context.get_file_path(0))
+        self.ecs_template_helper = ECSTemplateHelper(Context.get_file_path(0))
 
         self.namespace = ''
         self.image_meta = None
@@ -75,14 +77,12 @@ class BackendCore:
         return load_file_name.split('.')[0]
 
     def parse_and_apply_templates(self, policy, source_deploy):
-        yaml_dict = {}
-
-        yaml_dict.update(self.kube_template_helper.load_policy_apply_yaml(policy))
-
         service_dict, source_deploy = self.extract_service_from_source_deployment(source_deploy)
-        yaml_dict.update({'processor': self.kube_template_helper.load_application_apply_yaml(service_dict)})
 
-        edge_nodes = self.kube_template_helper.get_all_selected_edge_nodes(yaml_dict)
+        kube_dict = self.kube_template_helper.load_template_config(policy, service_dict)
+        ecs_dict = self.ecs_template_helper.load_template_config(policy, service_dict)
+
+        edge_nodes = self.kube_template_helper.get_all_selected_edge_nodes(kube_dict)
         cloud_node = NodeInfo.get_cloud_node()
 
         kube_edge_nodes = [node for node in edge_nodes if NodeInfo.get_node_role(node) == 'edge']
@@ -93,7 +93,7 @@ class BackendCore:
         second_stage_components = ['generator', 'processor']
 
         LOGGER.info(f'[First Deployment Stage] deploy components:{first_stage_components}')
-        first_docs_list = self.kube_template_helper.finetune_yaml_parameters(yaml_dict, source_deploy, kube_edge_nodes, cloud_node,
+        first_docs_list = self.kube_template_helper.finetune_yaml_parameters(kube_dict, source_deploy, kube_edge_nodes, cloud_node,
                                                                         scopes=first_stage_components)
         try:
             result, msg = self.install_yaml_templates(first_docs_list)
@@ -111,7 +111,7 @@ class BackendCore:
             return False, msg
 
         LOGGER.info(f'[Second Deployment Stage] deploy components:{second_stage_components}')
-        second_docs_list = self.kube_template_helper.finetune_yaml_parameters(yaml_dict, source_deploy, kube_edge_nodes, cloud_node,
+        second_docs_list = self.kube_template_helper.finetune_yaml_parameters(kube_dict, source_deploy, kube_edge_nodes, cloud_node,
                                                                          scopes=second_stage_components)
         try:
             result, msg = self.install_yaml_templates(second_docs_list)

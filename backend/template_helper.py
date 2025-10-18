@@ -8,6 +8,9 @@ class TemplateHelper:
     def __init__(self, templates_dir):
         self.templates_dir = templates_dir
 
+    def load_template_config(self, policy, service_dict):
+        raise NotImplementedError()
+
     def load_base_info(self):
         base_template_path = os.path.join(self.templates_dir, 'base.yaml')
         return YamlOps.read_yaml(base_template_path)

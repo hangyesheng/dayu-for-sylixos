@@ -13,6 +13,12 @@ class KubeTemplateHelper(TemplateHelper):
     def __init__(self, templates_dir):
         super().__init__(templates_dir)
 
+    def load_template_config(self, policy, service_dict):
+        yaml_dict = {}
+        yaml_dict.update(self.load_policy_apply_yaml(policy))
+        yaml_dict.update({'processor': self.load_application_apply_yaml(service_dict)})
+        return yaml_dict
+
     def fill_template(self, yaml_doc, component_name):
         base_info = self.load_base_info()
         namespace = base_info['namespace']
