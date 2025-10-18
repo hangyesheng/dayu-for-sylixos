@@ -11,13 +11,13 @@ from core.lib.common import LOGGER, Context, YamlOps, FileOps, Counter, SystemCo
 from core.lib.network import http_request, NodeInfo, PortInfo, merge_address, NetworkAPIPath, NetworkAPIMethod
 
 from kube_helper import KubeHelper
-from template_helper import TemplateHelper
+from kube_template_helper import KubeTemplateHelper
 
 
 class BackendCore:
     def __init__(self):
 
-        self.template_helper = TemplateHelper(Context.get_file_path(0))
+        self.template_helper = KubeTemplateHelper(Context.get_file_path(0))
 
         self.namespace = ''
         self.image_meta = None
