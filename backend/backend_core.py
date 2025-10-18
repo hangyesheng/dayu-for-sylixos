@@ -17,7 +17,7 @@ from kube_template_helper import KubeTemplateHelper
 class BackendCore:
     def __init__(self):
 
-        self.template_helper = KubeTemplateHelper(Context.get_file_path(0))
+        self.kube_template_helper = KubeTemplateHelper(Context.get_file_path(0))
 
         self.namespace = ''
         self.image_meta = None
@@ -57,7 +57,7 @@ class BackendCore:
 
     def parse_base_info(self):
         try:
-            base_info = self.template_helper.load_base_info()
+            base_info = self.kube_template_helper.load_base_info()
             self.namespace = base_info['namespace']
             self.image_meta = base_info['default-image-meta']
             self.schedulers = base_info['scheduler-policies']
@@ -68,7 +68,7 @@ class BackendCore:
             LOGGER.warning(f'Parse base info failed: {str(e)}')
 
     def get_log_file_name(self):
-        base_info = self.template_helper.load_base_info()
+        base_info = self.kube_template_helper.load_base_info()
         load_file_name = base_info['log-file-name']
         if not load_file_name:
             return None
@@ -77,16 +77,23 @@ class BackendCore:
     def parse_and_apply_templates(self, policy, source_deploy):
         yaml_dict = {}
 
-        yaml_dict.update(self.template_helper.load_policy_apply_yaml(policy))
+        yaml_dict.update(self.kube_template_helper.load_policy_apply_yaml(policy))
 
         service_dict, source_deploy = self.extract_service_from_source_deployment(source_deploy)
-        yaml_dict.update({'processor': self.template_helper.load_application_apply_yaml(service_dict)})
+        yaml_dict.update({'processor': self.kube_template_helper.load_application_apply_yaml(service_dict)})
+
+        edge_nodes = self.kube_template_helper.get_all_selected_edge_nodes(yaml_dict)
+        cloud_node = NodeInfo.get_cloud_node()
+
+        kube_edge_nodes = [node for node in edge_nodes if NodeInfo.get_node_role(node) == 'edge']
+        ecs_edge_nodes = [node for node in edge_nodes if NodeInfo.get_node_role(node) == 'edge-sylixos']
+
 
         first_stage_components = ['scheduler', 'distributor', 'monitor', 'controller']
         second_stage_components = ['generator', 'processor']
 
         LOGGER.info(f'[First Deployment Stage] deploy components:{first_stage_components}')
-        first_docs_list = self.template_helper.finetune_yaml_parameters(yaml_dict, source_deploy,
+        first_docs_list = self.kube_template_helper.finetune_yaml_parameters(yaml_dict, source_deploy, kube_edge_nodes, cloud_node,
                                                                         scopes=first_stage_components)
         try:
             result, msg = self.install_yaml_templates(first_docs_list)
@@ -104,7 +111,7 @@ class BackendCore:
             return False, msg
 
         LOGGER.info(f'[Second Deployment Stage] deploy components:{second_stage_components}')
-        second_docs_list = self.template_helper.finetune_yaml_parameters(yaml_dict, source_deploy,
+        second_docs_list = self.kube_template_helper.finetune_yaml_parameters(yaml_dict, source_deploy, kube_edge_nodes, cloud_node,
                                                                          scopes=second_stage_components)
         try:
             result, msg = self.install_yaml_templates(second_docs_list)

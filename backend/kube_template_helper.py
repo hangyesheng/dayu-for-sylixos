@@ -123,10 +123,7 @@ class KubeTemplateHelper(TemplateHelper):
 
         return template_doc
 
-    def finetune_yaml_parameters(self, yaml_dict, source_deploy, scopes=None):
-        edge_nodes = self.get_all_selected_edge_nodes(yaml_dict)
-        cloud_node = NodeInfo.get_cloud_node()
-
+    def finetune_yaml_parameters(self, yaml_dict, source_deploy, edge_nodes, cloud_node, scopes=None):
         docs_list = []
         if not scopes or 'generator' in scopes:
             docs_list.append(self.finetune_generator_yaml(yaml_dict['generator'], source_deploy))
