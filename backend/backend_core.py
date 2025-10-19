@@ -1,5 +1,6 @@
 import copy
 import re
+import json
 from collections import deque
 from func_timeout import func_set_timeout as timeout
 import func_timeout.exceptions as timeout_exceptions
@@ -220,20 +221,82 @@ class BackendCore:
 
     @timeout(120)
     def uninstall_json_templates(self, service_id_list):
-        # todo: 请求ecsm删除服务
-        res = False
+        if not service_id_list:
+            return False, 'service id list is empty'
+        
+        for service_id in service_id_list:
+            ecsm_host = str(Context.get_parameter('ECSM_HOST'))
+            ecsm_port = str(Context.get_parameter('ECSM_PORT'))
+            remote_api_url = merge_address(ip=ecsm_host, 
+                                        port=ecsm_port, 
+                                        path=NetworkAPIPath.BACKEND_ECSM_UNINSTALL_SERVICE.format(service_id))   
+                   
+            _result = False
 
-        return res, '' if res else 'ecs api error'
+            try:
+                response_data = http_request(
+                    url=remote_api_url,
+                    method=NetworkAPIMethod.BACKEND_ECSM_UNINSTALL_SERVICE,
+                )
+                # 检查返回值是否有效
+                if not response_data:
+                    LOGGER.warning("Empty response from remote API.")
+                elif isinstance(response_data, dict) and response_data.get('status') == 200:
+                    _result = True
+                    LOGGER.info(f"Service {service_id} uninstalled successfully")
+                else:
+                    error_msg = response_data.get('message', 'Unknown error') if isinstance(response_data, dict) else 'Invalid response format'
+                    LOGGER.warning(f"Remote API returned non-success status or invalid data: {error_msg}")
+            except Exception as e:
+                LOGGER.warning(f"Failed to fetch or parse remote node info: {e}")
+            
+            if not _result:
+                return False, 'unexpected system error, please refer to logs in backend'
+
+        return True, 'Uninstall services successfully'
 
     @timeout(60)
     def install_json_templates(self, json_docs):
         if not json_docs:
             return False, 'components json data is empty', []
         
-        # todo: 请求ecsm创建服务
-        _result = False
+        service_id_list = []
+        
+        for json_doc in json_docs:
+            ecsm_host = str(Context.get_parameter('ECSM_HOST'))
+            ecsm_port = str(Context.get_parameter('ECSM_PORT'))
+            remote_api_url = merge_address(ip=ecsm_host, 
+                                        port=ecsm_port, 
+                                        path=NetworkAPIPath.BACKEND_ECSM_INSTALL_SERVICE)   
+                   
+            _result = False
 
-        return _result, '' if _result else 'ecs api error', []
+            try:
+                response_data = http_request(
+                    url=remote_api_url,
+                    method=NetworkAPIMethod.BACKEND_ECSM_INSTALL_SERVICE,
+                    headers={
+                        'Content-Type': 'application/json'
+                    },
+                    json=json_doc
+                )
+                # 检查返回值是否有效
+                if not response_data:
+                    LOGGER.warning("Empty response from remote API.")
+                elif isinstance(response_data, dict) and response_data.get('status') == 200:
+                    _result = True
+                    service_id = response_data["data"]["id"]
+                    service_id_list.append(service_id)
+                else:
+                    error_msg = response_data.get('message', 'Unknown error') if isinstance(response_data, dict) else 'Invalid response format'
+                    LOGGER.warning(f"Remote API returned non-success status or invalid data: {error_msg}")
+            except Exception as e:
+                LOGGER.warning(f"Failed to fetch or parse remote node info: {e}")
+            
+            if not _result:
+                return False, 'unexpected system error, please refer to logs in backend', service_id_list
+
+        return True, 'Install services successfully', service_id_list
 
     def save_component_ecs_service_id(self, service_id_list):
         self.cur_ecs_service_id_list.extend(service_id_list)
