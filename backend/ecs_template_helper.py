@@ -2,6 +2,7 @@ from template_helper import TemplateHelper
 
 from core.lib.common import Context, LOGGER
 from core.lib.network import merge_address
+from core.lib.network import NodeInfo
 from core.lib.network import NetworkAPIPath, NetworkAPIMethod
 from core.lib.network import http_request
 
@@ -25,9 +26,9 @@ class ECSTemplateHelper(TemplateHelper):
     def finetune_parameters(self, template_dict, source_deploy, edge_nodes, cloud_node, scopes=None):
         docs_list = []
         if not scopes or 'generator' in scopes:
-            docs_list.append(self.finetune_genetator_json(template_dict['generator'], source_deploy))
+            docs_list.extend(self.finetune_genetator_json(template_dict['generator'], source_deploy))
         if not scopes or 'processor' in scopes:
-            docs_list.append(self.finetune_processor_json(template_dict['processor'], cloud_node, source_deploy))
+            docs_list.extend(self.finetune_processor_json(template_dict['processor'], cloud_node, source_deploy))
         if not scopes or 'controller' in scopes:
             docs_list.append(self.finetune_controller_json(template_dict['controller'], edge_nodes, cloud_node))
         
@@ -122,19 +123,55 @@ class ECSTemplateHelper(TemplateHelper):
         return final_json      
     
     def finetune_genetator_json(self, template_dict, source_deploy):
-        # todo: 增加 generator 的特有配置
+        template_docs = []
+        
+        for source_info in source_deploy:
+            template_json_dict = self._request_ecs_image_config(template_dict['pod-template']['ref'])
+            template_doc = self.fill_template(template_dict, template_json_dict, 'generator')
 
-        template_json_dict = self._request_ecs_image_config(template_dict['pod-template']['ref'])
-        template_doc = self.fill_template(template_dict, template_json_dict, 'generator')
+            source = source_info['source']
+            node_set = source_info['node_set']
+            
+            LOGGER.warning("Using default selection plan.")
+            node = node_set[0]
 
-        # todo: 向node names中添加edge node
+            source_info['source'].update({'deploy_node': node})
+            dag = source_info['dag']
 
-        return template_doc
+            DAG_ENV = {}
+            for key in dag.keys():
+                temp_node = {}
+                if key != '_start':
+                    temp_node['service'] = {'service_name': key}
+                    temp_node['next_nodes'] = dag[key]['succ']
+                    DAG_ENV[key] = temp_node
+
+            env_list = [
+                    {'name': 'GEN_GETTER_NAME', 'value': str(source['source_mode'])},
+                    {'name': 'SOURCE_URL', 'value': str(source['url'])},
+                    {'name': 'SOURCE_TYPE', 'value': str(source['source_type'])},
+                    {'name': 'SOURCE_ID', 'value': str(source['id'])},
+                    {'name': 'SOURCE_METADATA', 'value': str(source['metadata'])},
+                    {'name': 'ALL_EDGE_DEVICES', 'value': str(node_set)},
+                    {'name': 'DAG', 'value': str(DAG_ENV)},
+                ]
+            new_env_list = [env_var['name'] + '=' + env_var['value'] for env_var in env_list]
+
+            template_doc["image"]["config"]["process"]["env"].extend(new_env_list)
+            
+            # 添加edge node ip
+            node_ip = NodeInfo.hostname2ip(node)
+            template_doc["node"]["names"].append(node_ip)
+
+            template_docs.append(template_doc)
+
+        return template_docs
     
     def finetune_processor_json(self, service_dict, cloud_node, source_deploy):
-        # todo: 添加 processor 的特有配置
+        if cloud_node is not None:
+            LOGGER.warning("Cloud node is not None, but ecs processor does not support cloud node.")
 
-        
+        template_docs = []
         for index, service_id in enumerate(service_dict):
             template_dict = service_dict[service_id]['service']
             service_name = service_dict[service_id]['service_name']
@@ -142,18 +179,27 @@ class ECSTemplateHelper(TemplateHelper):
             template_json_dict = self._request_ecs_image_config(template_dict['pod-template']['ref'])
             template_doc = self.fill_template(template_dict, template_json_dict, f'processor-{service_name}')
 
+            edge_nodes = service_dict[service_id]['node']
+            LOGGER.warning("Using default selection plan.")
 
-            # todo: 向node names中添加edge node
+            # 添加edge node ip
+            edge_nodes_ip = [NodeInfo.hostname2ip(node) for node in edge_nodes]
+            template_doc['node']['names'].extend(edge_nodes_ip)
 
-        return template_doc
+            template_docs.append(template_doc)
+
+        return template_docs
     
     def finetune_controller_json(self, template_dict, edge_nodes, cloud_node):
-        # todo: 添加 controller 的特有配置
+        if cloud_node is not None:
+            LOGGER.warning("Cloud node is not None, but ecs controller does not support cloud node.")
 
         template_json_dict = self._request_ecs_image_config(template_dict['pod-template']['ref'])
         template_doc = self.fill_template(template_dict, template_json_dict, 'controller')
 
-        # todo: 向node names中添加edge node
+        # 添加edge node ip
+        edge_nodes_ip = [NodeInfo.hostname2ip(node) for node in edge_nodes]
+        template_doc['node']['names'].extend(edge_nodes_ip)
 
         return template_doc
 

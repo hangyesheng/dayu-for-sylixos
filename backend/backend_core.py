@@ -114,8 +114,8 @@ class BackendCore:
         if not result:
             return False, msg
         
-        # first stage: ecs deploy
-        first_json_list = self.ecs_template_helper.finetune_parameters(ecs_dict, source_deploy, ecs_edge_nodes, cloud_node,
+        # first stage: ecs deploy (edge only)
+        first_json_list = self.ecs_template_helper.finetune_parameters(ecs_dict, source_deploy, ecs_edge_nodes, None,
                                                                         scopes=first_stage_components)
         try:
             result, msg, first_service_id_list = self.install_json_templates(first_json_list)
@@ -150,7 +150,7 @@ class BackendCore:
         if not result:
             return False, msg
 
-        # second stage: ecs deploy
+        # second stage: ecs deploy (edge only)
         second_json_list = self.ecs_template_helper.finetune_parameters(ecs_dict, source_deploy, ecs_edge_nodes, cloud_node,
                                                                          scopes=second_stage_components)
         try:
