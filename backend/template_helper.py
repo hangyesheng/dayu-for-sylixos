@@ -73,6 +73,24 @@ class TemplateHelper:
 
         full_image = f"{registry}/{repository}/{image_name}:{tag}"
         return full_image
+    
+    def get_image_name(self, image: str) -> str:
+        pattern = re.compile(
+            r"^(?:(?P<registry>[^/]+)/"  # match registry with '/'
+            r"(?=.*/)"  # forward pre-check to make sure there is a '/' followed
+            r")?"  # registry is optional
+            r"(?:(?P<repository>[^/:]+)/)?"  # match repository
+            r"(?P<image>[^:]+)"  # match image
+            r"(?::(?P<tag>[^:]+))?$"  # match tag
+        )
+
+        match = pattern.match(image)
+        if not match:
+            raise ValueError(f'Format of input image "{image}" is illegal')
+
+        image_name = match.group("image")
+        
+        return image_name
 
     def prepare_file_path(self, file_path: str) -> str:
         file_prefix = self.load_base_info()['default-file-mount-prefix']

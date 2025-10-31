@@ -98,6 +98,8 @@ class NodeInfo:
 
         except Exception as e:
             LOGGER.warning(f"Failed to fetch or parse remote node info: {e}")
+    
+        LOGGER.info(f"All Node dict: {node_dict}, Node role: {node_role}")
 
         node_dict_reverse = reverse_key_value_in_dict(node_dict)
 

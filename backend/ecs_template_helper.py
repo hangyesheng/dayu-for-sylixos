@@ -35,24 +35,18 @@ class ECSTemplateHelper(TemplateHelper):
         return docs_list
 
     def _check_and_modify_yaml_dict(self, template_dict):
-        # 1. 定义支持的 image 值
-        supported_images = ['generator', 'controller', 'car-detection', 'face-detection']
-
-        # 2. 获取 pod-template 中的 image
+        # 获取 pod-template 中的 image
         pod_template = template_dict['pod-template']
         image = pod_template.get('image')
+        image_name = self.get_image_name(image)
 
-        # 3. 检查 image 是否在支持列表中
-        if image not in supported_images:
-            raise ValueError(f"不支持的 image: {image}。必须是 {supported_images} 之一。")
-
-        # 4. 修改 image 字段为 ref 字段
-        ref_value = f"{image}@latest#sylixos"
+        # 修改 image 字段为 ref 字段
+        ref_value = f"{image_name}@latest#sylixos"
         pod_template['ref'] = ref_value
-        # 5. 删除原来的 image 字段
+        # 删除原来的 image 字段
         del pod_template['image']
 
-        # 6. 将 imagePullPolicy 改为 pullPolicy
+        # 将 imagePullPolicy 改为 pullPolicy
         if 'imagePullPolicy' in pod_template:
             pod_template['pullPolicy'] = pod_template.pop('imagePullPolicy')
         
@@ -60,11 +54,13 @@ class ECSTemplateHelper(TemplateHelper):
         return template_dict
     
     def _request_ecs_image_config(self, image_name):
+        url_image_name = image_name.replace("#", "%23")
+        
         ecsm_host = str(Context.get_parameter('ECSM_HOST'))
         ecsm_port = str(Context.get_parameter('ECSM_PORT'))
         remote_api_url = merge_address(ip=ecsm_host, 
                                        port=ecsm_port, 
-                                       path=NetworkAPIPath.BACKEND_ECSM_IMAGE_CONFIG + f"?ref={image_name}")
+                                       path=NetworkAPIPath.BACKEND_ECSM_IMAGE_CONFIG + f"?ref={url_image_name}")
         
         template_json_dict = {}
 
@@ -102,7 +98,8 @@ class ECSTemplateHelper(TemplateHelper):
                 "platform": template_json_dict['config']['platform'],
                 "process": {
                     "args": template_json_dict['config']['process']['args'],
-                    "env": template_json_dict['config']['process']['env'].extend(new_env_list),
+                    "env": template_json_dict['config']['process']['env'] + new_env_list,
+                    "cwd": template_json_dict['config']['process']['cwd']
                 },
                 "root": template_json_dict['config']['root'],
                 "hostname": template_json_dict['config']['hostname'],
@@ -110,14 +107,24 @@ class ECSTemplateHelper(TemplateHelper):
                 "sylixos": template_json_dict['config']['sylixos']
             }
         }
+        
+        import random
+        import string
+        def generate_service_name(prefix, length=8):
+            # 定义可用的字符：大写字母、小写字母、数字
+            characters = string.ascii_letters + string.digits  # a-z, A-Z, 0-9
+            random_suffix = ''.join(random.choices(characters, k=length))
+            return f"{prefix}-{random_suffix}"
 
         # 构建最终的 JSON 结构
         final_json = {
-            "name": f"{component_name}_service",
+            "name": generate_service_name(prefix=f"{component_name}_service", length=8),
             "image": new_image_section,
             "node": {
                 "names": []
-            }
+            },
+            "policy": "static", 
+            "factor": 1
         }
 
         return final_json      
@@ -159,9 +166,8 @@ class ECSTemplateHelper(TemplateHelper):
 
             template_doc["image"]["config"]["process"]["env"].extend(new_env_list)
             
-            # 添加edge node ip
-            node_ip = NodeInfo.hostname2ip(node)
-            template_doc["node"]["names"].append(node_ip)
+            # 添加edge node
+            template_doc["node"]["names"].append(node)
 
             template_docs.append(template_doc)
 
@@ -182,9 +188,8 @@ class ECSTemplateHelper(TemplateHelper):
             edge_nodes = service_dict[service_id]['node']
             LOGGER.warning("Using default selection plan.")
 
-            # 添加edge node ip
-            edge_nodes_ip = [NodeInfo.hostname2ip(node) for node in edge_nodes]
-            template_doc['node']['names'].extend(edge_nodes_ip)
+            # 添加edge node
+            template_doc['node']['names'].extend(edge_nodes)
 
             template_docs.append(template_doc)
 
@@ -197,9 +202,8 @@ class ECSTemplateHelper(TemplateHelper):
         template_json_dict = self._request_ecs_image_config(template_dict['pod-template']['ref'])
         template_doc = self.fill_template(template_dict, template_json_dict, 'controller')
 
-        # 添加edge node ip
-        edge_nodes_ip = [NodeInfo.hostname2ip(node) for node in edge_nodes]
-        template_doc['node']['names'].extend(edge_nodes_ip)
+        # 添加edge node
+        template_doc['node']['names'].extend(edge_nodes)
 
         return template_doc
 

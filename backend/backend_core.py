@@ -270,6 +270,8 @@ class BackendCore:
                                         path=NetworkAPIPath.BACKEND_ECSM_INSTALL_SERVICE)   
                    
             _result = False
+            
+            LOGGER.info(f"Installing service, json config: {json.dumps(json_doc)}")
 
             try:
                 response_data = http_request(
