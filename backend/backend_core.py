@@ -82,8 +82,41 @@ class BackendCore:
     def parse_and_apply_templates(self, policy, source_deploy):
         service_dict, source_deploy = self.extract_service_from_source_deployment(source_deploy)
 
-        kube_dict = self.kube_template_helper.load_template_config(policy, service_dict)
-        ecs_dict = self.ecs_template_helper.load_template_config(policy, service_dict)
+        kube_service_dict = {}
+        ecs_service_dict = {}
+
+        for service_id, service in service_dict.items():
+            service_edge_nodes = service['node']
+
+            kube_service_edge_nodes = [node for node in service_edge_nodes if NodeInfo.get_node_role(node) == 'edge']
+            if kube_service_edge_nodes:
+                kube_service_dict[service_id] = {'service_name': service['service_name'], 
+                                                 'yaml': service['yaml'], 
+                                                 'node': kube_service_edge_nodes}
+            
+            ecs_service_edge_nodes = [node for node in service_edge_nodes if NodeInfo.get_node_role(node) == 'edge-sylixos']
+            if ecs_service_edge_nodes:
+                ecs_service_dict[service_id] = {'service_name': service['service_name'], 
+                                                'yaml': service['yaml'], 
+                                                'node': ecs_service_edge_nodes}
+            
+        kube_source_deploy = []
+        ecs_source_deploy = []
+
+        for source_info in source_deploy:
+            source_edge_nodes = source_info['node_set']
+
+            kube_source_edge_nodes = [node for node in source_edge_nodes if NodeInfo.get_node_role(node) == 'edge']
+            if kube_source_edge_nodes:
+                kube_source_deploy.append({'source': source_info['source'], 'dag': source_info['dag'], 'node_set': kube_source_edge_nodes})
+
+            ecs_source_edge_nodes = [node for node in source_edge_nodes if NodeInfo.get_node_role(node) == 'edge-sylixos']
+            if ecs_source_edge_nodes:
+                ecs_source_deploy.append({'source': source_info['source'], 'dag': source_info['dag'], 'node_set': ecs_source_edge_nodes})
+
+
+        kube_dict = self.kube_template_helper.load_template_config(policy, kube_service_dict)
+        ecs_dict = self.ecs_template_helper.load_template_config(policy, ecs_service_dict)
 
         edge_nodes = self.kube_template_helper.get_all_selected_edge_nodes(kube_dict)
         cloud_node = NodeInfo.get_cloud_node()
@@ -97,7 +130,7 @@ class BackendCore:
 
         # first stage: kube deploy
         LOGGER.info(f'[First Deployment Stage] deploy components:{first_stage_components}')
-        first_yaml_list = self.kube_template_helper.finetune_parameters(kube_dict, source_deploy, kube_edge_nodes, cloud_node,
+        first_yaml_list = self.kube_template_helper.finetune_parameters(kube_dict, kube_source_deploy, kube_edge_nodes, cloud_node,
                                                                         scopes=first_stage_components)
         try:
             result, msg = self.install_yaml_templates(first_yaml_list)
@@ -115,7 +148,7 @@ class BackendCore:
             return False, msg
         
         # first stage: ecs deploy (edge only)
-        first_json_list = self.ecs_template_helper.finetune_parameters(ecs_dict, source_deploy, ecs_edge_nodes, None,
+        first_json_list = self.ecs_template_helper.finetune_parameters(ecs_dict, ecs_source_deploy, ecs_edge_nodes, None,
                                                                         scopes=first_stage_components)
         try:
             result, msg, first_service_id_list = self.install_json_templates(first_json_list)
@@ -133,7 +166,7 @@ class BackendCore:
 
         # second stage: kube deploy
         LOGGER.info(f'[Second Deployment Stage] deploy components:{second_stage_components}')
-        second_yaml_list = self.kube_template_helper.finetune_parameters(kube_dict, source_deploy, kube_edge_nodes, cloud_node,
+        second_yaml_list = self.kube_template_helper.finetune_parameters(kube_dict, kube_source_deploy, kube_edge_nodes, cloud_node,
                                                                          scopes=second_stage_components)
         try:
             result, msg = self.install_yaml_templates(second_yaml_list)
@@ -151,7 +184,7 @@ class BackendCore:
             return False, msg
 
         # second stage: ecs deploy (edge only)
-        second_json_list = self.ecs_template_helper.finetune_parameters(ecs_dict, source_deploy, ecs_edge_nodes, cloud_node,
+        second_json_list = self.ecs_template_helper.finetune_parameters(ecs_dict, ecs_source_deploy, ecs_edge_nodes, None,
                                                                          scopes=second_stage_components)
         try:
             result, msg, second_service_id_list = self.install_json_templates(second_json_list)
@@ -255,7 +288,7 @@ class BackendCore:
 
         return True, 'Uninstall services successfully'
 
-    @timeout(60)
+    @timeout(120)
     def install_json_templates(self, json_docs):
         if not json_docs:
             return False, 'components json data is empty', []
