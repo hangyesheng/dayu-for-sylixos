@@ -1,4 +1,5 @@
 from typing import List
+import time
 
 from kubernetes import client, config
 from core.lib.common import reverse_key_value_in_dict, Context
@@ -67,37 +68,48 @@ class NodeInfo:
         remote_api_url = merge_address(ip=ecsm_host, 
                                        port=ecsm_port, 
                                        path=NetworkAPIPath.BACKEND_ECSM_NODE)
+        
+        max_retries = 10
+        retry_count = 0
 
-        try:
-            # 调用封装好的 http_request 方法
-            response_data = http_request(
-                url=remote_api_url,
-                method=NetworkAPIMethod.BACKEND_ECSM_NODE
-            )
+        while retry_count < max_retries:
+            try:
+                # 调用封装好的 http_request 方法
+                response_data = http_request(
+                    url=remote_api_url,
+                    method=NetworkAPIMethod.BACKEND_ECSM_NODE,
+                    timeout=3
+                )
 
-            # 检查返回值是否有效
-            if not response_data:
-                LOGGER.warning("Empty response from remote API.")
-            elif isinstance(response_data, dict) and response_data.get('status') == 200:
-                remote_nodes = response_data['data']['list']
-                for remote_node in remote_nodes:
-                    node_name = remote_node['name']
-                    address = remote_node['address']  # 如 "192.168.200.101:1112"
-                    ip = address.split(':')[0]  # 提取 IP
+                # 检查返回值是否有效
+                if not response_data:
+                    LOGGER.warning("Empty response from remote API.")
+                elif isinstance(response_data, dict) and response_data.get('status') == 200:
+                    remote_nodes = response_data['data']['list']
+                    for remote_node in remote_nodes:
+                        node_name = remote_node['name']
+                        address = remote_node['address']  # 如 "192.168.200.101:1112"
+                        ip = address.split(':')[0]  # 提取 IP
 
-                    # 避免覆盖已有节点
-                    if node_name not in node_dict:
-                        node_dict[node_name] = ip
-                        node_role[node_name] = 'edge-sylixos'  # 统一标记为边缘节点，但是额外标记为sylixos
-                        LOGGER.info(f"Added remote edge node: {node_name} -> {ip}")
-                    else:
-                        LOGGER.warning(f"Remote node {node_name} already exists. Skipping.")
-            else:
-                error_msg = response_data.get('message', 'Unknown error') if isinstance(response_data, dict) else 'Invalid response format'
-                LOGGER.warning(f"Remote API returned non-success status or invalid data: {error_msg}")
+                        # 避免覆盖已有节点
+                        if node_name not in node_dict:
+                            node_dict[node_name] = ip
+                            node_role[node_name] = 'edge-sylixos'  # 统一标记为边缘节点，但是额外标记为sylixos
+                            LOGGER.info(f"Added remote edge node: {node_name} -> {ip}")
+                        else:
+                            LOGGER.warning(f"Remote node {node_name} already exists. Skipping.")
+                    
+                    break
+                else:
+                    error_msg = response_data.get('message', 'Unknown error') if isinstance(response_data, dict) else 'Invalid response format'
+                    LOGGER.warning(f"Remote API returned non-success status or invalid data: {error_msg}")
 
-        except Exception as e:
-            LOGGER.warning(f"Failed to fetch or parse remote node info: {e}")
+            except Exception as e:
+                LOGGER.warning(f"Failed to fetch or parse remote node info: {e}")
+                
+            retry_count += 1
+            if retry_count < max_retries:
+                time.sleep(1)
     
         LOGGER.info(f"All Node dict: {node_dict}, Node role: {node_role}")
 

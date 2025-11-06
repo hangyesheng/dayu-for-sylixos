@@ -89,10 +89,10 @@ class BackendCore:
             service_edge_nodes = service['node']
 
             kube_service_edge_nodes = [node for node in service_edge_nodes if NodeInfo.get_node_role(node) == 'edge']
-            if kube_service_edge_nodes:
-                kube_service_dict[service_id] = {'service_name': service['service_name'], 
-                                                 'yaml': service['yaml'], 
-                                                 'node': kube_service_edge_nodes}
+            # processor的service_dict需要在云端同时下装，因此边缘节点为空时也要保留字段
+            kube_service_dict[service_id] = {'service_name': service['service_name'], 
+                                            'yaml': service['yaml'], 
+                                            'node': kube_service_edge_nodes}
             
             ecs_service_edge_nodes = [node for node in service_edge_nodes if NodeInfo.get_node_role(node) == 'edge-sylixos']
             if ecs_service_edge_nodes:
@@ -118,12 +118,9 @@ class BackendCore:
         kube_dict = self.kube_template_helper.load_template_config(policy, kube_service_dict)
         ecs_dict = self.ecs_template_helper.load_template_config(policy, ecs_service_dict)
 
-        edge_nodes = self.kube_template_helper.get_all_selected_edge_nodes(kube_dict)
+        kube_edge_nodes = self.kube_template_helper.get_all_selected_edge_nodes(kube_dict)
+        ecs_edge_nodes = self.ecs_template_helper.get_all_selected_edge_nodes(ecs_dict)
         cloud_node = NodeInfo.get_cloud_node()
-
-        kube_edge_nodes = [node for node in edge_nodes if NodeInfo.get_node_role(node) == 'edge']
-        ecs_edge_nodes = [node for node in edge_nodes if NodeInfo.get_node_role(node) == 'edge-sylixos']
-
 
         first_stage_components = ['scheduler', 'distributor', 'monitor', 'controller']
         second_stage_components = ['generator', 'processor']
@@ -156,7 +153,7 @@ class BackendCore:
         except timeout_exceptions.FunctionTimedOut as e:
             LOGGER.warning(f'Parse and apply templates failed: {str(e)}')
             result = False
-            msg = 'first-stage install timeout after 60 seconds'
+            msg = 'first-stage install timeout after 120 seconds'
         except Exception as e:
             LOGGER.warning(f'Parse and apply templates failed: {str(e)}')
             result = False
@@ -192,7 +189,7 @@ class BackendCore:
         except timeout_exceptions.FunctionTimedOut as e:
             LOGGER.warning(f'Parse and apply templates failed: {str(e)}')
             result = False
-            msg = 'second-stage install timeout after 60 seconds'
+            msg = 'second-stage install timeout after 120 seconds'
         except Exception as e:
             LOGGER.warning(f'Parse and apply templates failed: {str(e)}')
             result = False
@@ -257,34 +254,38 @@ class BackendCore:
         if not service_id_list:
             return False, 'service id list is empty'
         
-        for service_id in service_id_list:
-            ecsm_host = str(Context.get_parameter('ECSM_HOST'))
-            ecsm_port = str(Context.get_parameter('ECSM_PORT'))
-            remote_api_url = merge_address(ip=ecsm_host, 
-                                        port=ecsm_port, 
-                                        path=NetworkAPIPath.BACKEND_ECSM_UNINSTALL_SERVICE.format(service_id))   
-                   
-            _result = False
+        ecsm_host = str(Context.get_parameter('ECSM_HOST'))
+        ecsm_port = str(Context.get_parameter('ECSM_PORT'))
+        remote_api_url = merge_address(ip=ecsm_host, 
+                                    port=ecsm_port, 
+                                    path=NetworkAPIPath.BACKEND_ECSM_UNINSTALL_SERVICE)   
+                
+        _result = False
 
-            try:
-                response_data = http_request(
-                    url=remote_api_url,
-                    method=NetworkAPIMethod.BACKEND_ECSM_UNINSTALL_SERVICE,
-                )
-                # 检查返回值是否有效
-                if not response_data:
-                    LOGGER.warning("Empty response from remote API.")
-                elif isinstance(response_data, dict) and response_data.get('status') == 200:
-                    _result = True
-                    LOGGER.info(f"Service {service_id} uninstalled successfully")
-                else:
-                    error_msg = response_data.get('message', 'Unknown error') if isinstance(response_data, dict) else 'Invalid response format'
-                    LOGGER.warning(f"Remote API returned non-success status or invalid data: {error_msg}")
-            except Exception as e:
-                LOGGER.warning(f"Failed to fetch or parse remote node info: {e}")
-            
-            if not _result:
-                return False, 'unexpected system error, please refer to logs in backend'
+        try:
+            response_data = http_request(
+                url=remote_api_url,
+                method=NetworkAPIMethod.BACKEND_ECSM_UNINSTALL_SERVICE,
+                headers={
+                    'Content-Type': 'application/json'
+                },
+                json={"ids": service_id_list}
+                
+            )
+            # 检查返回值是否有效
+            if not response_data:
+                LOGGER.warning("Empty response from remote API.")
+            elif isinstance(response_data, dict) and response_data.get('status') == 200:
+                _result = True
+                LOGGER.info(f"Service {service_id_list} uninstalled successfully")
+            else:
+                error_msg = response_data.get('message', 'Unknown error') if isinstance(response_data, dict) else 'Invalid response format'
+                LOGGER.warning(f"Remote API returned non-success status or invalid data: {error_msg}")
+        except Exception as e:
+            LOGGER.warning(f"Failed to fetch or parse remote node info: {e}")
+        
+        if not _result:
+            return False, 'unexpected system error, please refer to logs in backend'
 
         return True, 'Uninstall services successfully'
 

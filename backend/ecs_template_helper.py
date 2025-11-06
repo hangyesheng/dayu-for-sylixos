@@ -1,3 +1,5 @@
+import time
+
 from template_helper import TemplateHelper
 
 from core.lib.common import Context, LOGGER
@@ -35,10 +37,10 @@ class ECSTemplateHelper(TemplateHelper):
         return docs_list
 
     def _check_and_modify_yaml_dict(self, template_dict):
-        # 获取 pod-template 中的 image
+        # 获取 pod-template 中的 image，且修改 - 连接符为 _ 连接符
         pod_template = template_dict['pod-template']
         image = pod_template.get('image')
-        image_name = self.get_image_name(image)
+        image_name = self.get_image_name(image).replace("-", "_")
 
         # 修改 image 字段为 ref 字段
         ref_value = f"{image_name}@latest#sylixos"
@@ -62,23 +64,37 @@ class ECSTemplateHelper(TemplateHelper):
                                        port=ecsm_port, 
                                        path=NetworkAPIPath.BACKEND_ECSM_IMAGE_CONFIG + f"?ref={url_image_name}")
         
-        template_json_dict = {}
+        LOGGER.info(f"Request ECS image config url: {remote_api_url}")
+        
+        template_json_dict = None
 
-        try:
-            response_data = http_request(
-                url=remote_api_url,
-                method=NetworkAPIMethod.BACKEND_ECSM_IMAGE_CONFIG
-            )
-            # 检查返回值是否有效
-            if not response_data:
-                LOGGER.warning("Empty response from remote API.")
-            elif isinstance(response_data, dict) and response_data.get('status') == 200:
-                template_json_dict = response_data['data']
-            else:
-                error_msg = response_data.get('message', 'Unknown error') if isinstance(response_data, dict) else 'Invalid response format'
-                LOGGER.warning(f"Remote API returned non-success status or invalid data: {error_msg}")
-        except Exception as e:
-            LOGGER.warning(f"Failed to fetch or parse remote node info: {e}")
+        max_retries = 10
+        retry_count = 0
+        while retry_count < max_retries:
+            try:
+                response_data = http_request(
+                    url=remote_api_url,
+                    method=NetworkAPIMethod.BACKEND_ECSM_IMAGE_CONFIG,
+                    timeout=5
+                )
+                # 检查返回值是否有效
+                if not response_data:
+                    LOGGER.warning("Empty response from remote API.")
+                elif isinstance(response_data, dict) and response_data.get('status') == 200:
+                    template_json_dict = response_data['data']
+                    break
+                else:
+                    error_msg = response_data.get('message', 'Unknown error') if isinstance(response_data, dict) else 'Invalid response format'
+                    LOGGER.warning(f"Remote API returned non-success status or invalid data: {error_msg}")
+            except Exception as e:
+                LOGGER.warning(f"Failed to fetch or parse remote node info: {e}")
+                
+            retry_count += 1
+            if retry_count < max_retries:
+                time.sleep(1)
+        
+        if template_json_dict is None:
+            LOGGER.error(f"Failed to retrieve valid data after {max_retries} attempts.")
         
         return template_json_dict
     

@@ -22,7 +22,8 @@ class KubeTemplateHelper(TemplateHelper):
     def finetune_parameters(self, template_dict, source_deploy, edge_nodes, cloud_node, scopes=None):
         docs_list = []
         if not scopes or 'generator' in scopes:
-            docs_list.append(self.finetune_generator_yaml(template_dict['generator'], source_deploy))
+            if source_deploy:
+                docs_list.append(self.finetune_generator_yaml(template_dict['generator'], source_deploy))
         if not scopes or 'controller' in scopes:
             docs_list.append(self.finetune_controller_yaml(template_dict['controller'], edge_nodes, cloud_node))
         if not scopes or 'distributor' in scopes:
@@ -361,6 +362,8 @@ class KubeTemplateHelper(TemplateHelper):
                     edge_workers.append(new_edge_worker)
                 yaml_doc['spec']['edgeWorker'] = edge_workers
             else:
+                yaml_doc['spec']['serviceConfig']['pos'] = 'cloud'
+                
                 del yaml_doc['spec']['edgeWorker']
 
             cloud_worker_template = yaml_doc['spec']['cloudWorker']
