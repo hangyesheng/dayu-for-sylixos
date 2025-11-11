@@ -359,6 +359,9 @@ class BackendCore:
             if not _result:
                 return False, 'unexpected system error, please refer to logs in backend', service_dict
 
+        while not ECSHelper.check_pods_running():
+            time.sleep(1)
+            
         return True, 'Install services successfully', service_dict
 
     def save_component_ecs_service(self, service_dict):

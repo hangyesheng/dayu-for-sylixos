@@ -102,3 +102,48 @@ class ECSHelper:
                     time.sleep(1)
         
         return info
+    
+    @staticmethod
+    def check_pods_running():
+        ecsm_host = str(Context.get_parameter('ECSM_HOST'))
+        ecsm_port = str(Context.get_parameter('ECSM_PORT'))
+        remote_api_url = merge_address(ip=ecsm_host, 
+                                    port=ecsm_port, 
+                                    path=NetworkAPIPath.BACKEND_ECSM_QUERY_ALL_SERVICE)   
+                
+        _result = False
+        
+        max_retries = 10
+        retry_count = 0
+        while retry_count < max_retries:
+            try:
+                response_data = http_request(
+                    url=remote_api_url,
+                    method=NetworkAPIMethod.BACKEND_ECSM_QUERY_ALL_SERVICE,
+                    timeout=2
+                )
+                
+                # 检查返回值是否有效
+                if not response_data:
+                    LOGGER.warning("Empty response from remote API.")
+                elif isinstance(response_data, dict) and response_data.get('status') == 200:
+                    is_all_running = True
+                    for service_info in response_data["data"]["list"]:
+                        if service_info["status"] != "complete":
+                            is_all_running = False
+                            break
+                        
+                    if is_all_running:
+                        _result = True
+                        break
+                else:
+                    error_msg = response_data.get('message', 'Unknown error') if isinstance(response_data, dict) else 'Invalid response format'
+                    LOGGER.warning(f"Remote API returned non-success status or invalid data: {error_msg}")
+            except Exception as e:
+                LOGGER.warning(f"Failed to fetch or parse remote node info: {e}")
+                
+            retry_count += 1
+            if retry_count < max_retries:
+                time.sleep(1)
+        
+        return _result
