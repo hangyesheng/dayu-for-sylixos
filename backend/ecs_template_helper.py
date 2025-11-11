@@ -75,7 +75,7 @@ class ECSTemplateHelper(TemplateHelper):
                 response_data = http_request(
                     url=remote_api_url,
                     method=NetworkAPIMethod.BACKEND_ECSM_IMAGE_CONFIG,
-                    timeout=1
+                    timeout=2
                 )
                 # 检查返回值是否有效
                 if not response_data:

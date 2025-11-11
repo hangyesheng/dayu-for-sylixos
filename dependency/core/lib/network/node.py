@@ -78,7 +78,7 @@ class NodeInfo:
                 response_data = http_request(
                     url=remote_api_url,
                     method=NetworkAPIMethod.BACKEND_ECSM_NODE,
-                    timeout=1
+                    timeout=2
                 )
 
                 # 检查返回值是否有效
