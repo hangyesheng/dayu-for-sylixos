@@ -15,6 +15,7 @@ from core.lib.network import http_request, NetworkAPIMethod, NetworkAPIPath
 
 from backend_core import BackendCore
 from kube_helper import KubeHelper
+from ecs_helper import ECSHelper
 
 
 class BackendServer:
@@ -339,7 +340,12 @@ class BackendServer:
         try:
             if service == 'null':
                 return []
-            info = KubeHelper.get_service_info(service_name=service, namespace=self.server.namespace)
+            kube_info = KubeHelper.get_service_info(service_name=service, namespace=self.server.namespace)
+            
+            ecs_service_id_list = [id for name, id in self.server.get_ecs_service_dict().items() if service in name]
+            ecs_info = ECSHelper.get_service_info(service_id_list=ecs_service_id_list)
+            
+            info = kube_info + ecs_info
 
             self.server.get_resource_url()
             if not self.server.resource_url:
@@ -515,7 +521,7 @@ class BackendServer:
             msg = f'unexpected system error, please refer to logs in backend'
 
         self.server.clear_yaml_docs()
-        self.server.clear_ecs_service_id()
+        self.server.clear_ecs_service_dict()
 
         if result:
             return {'state': 'success', 'msg': 'Uninstall services successfully'}

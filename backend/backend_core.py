@@ -12,6 +12,7 @@ from core.lib.common import LOGGER, Context, YamlOps, FileOps, Counter, SystemCo
 from core.lib.network import http_request, NodeInfo, PortInfo, merge_address, NetworkAPIPath, NetworkAPIMethod
 
 from kube_helper import KubeHelper
+from ecs_helper import ECSHelper
 from kube_template_helper import KubeTemplateHelper
 from ecs_template_helper import ECSTemplateHelper
 
@@ -54,7 +55,7 @@ class BackendCore:
         self.save_yaml_path = 'resources.yaml'
         self.log_file_path = 'log.json'
 
-        self.cur_ecs_service_id_list = []
+        self.cur_ecs_service_dict = {}
 
         self.default_visualization_image = 'default_visualization.png'
 
@@ -148,8 +149,8 @@ class BackendCore:
         first_json_list = self.ecs_template_helper.finetune_parameters(ecs_dict, ecs_source_deploy, ecs_edge_nodes, None,
                                                                         scopes=first_stage_components)
         try:
-            result, msg, first_service_id_list = self.install_json_templates(first_json_list)
-            self.save_component_ecs_service_id(first_service_id_list)
+            result, msg, first_service_dict = self.install_json_templates(first_json_list)
+            self.save_component_ecs_service(first_service_dict)
         except timeout_exceptions.FunctionTimedOut as e:
             LOGGER.warning(f'Parse and apply templates failed: {str(e)}')
             result = False
@@ -184,8 +185,8 @@ class BackendCore:
         second_json_list = self.ecs_template_helper.finetune_parameters(ecs_dict, ecs_source_deploy, ecs_edge_nodes, None,
                                                                          scopes=second_stage_components)
         try:
-            result, msg, second_service_id_list = self.install_json_templates(second_json_list)
-            self.save_component_ecs_service_id(second_service_id_list)
+            result, msg, second_service_dict = self.install_json_templates(second_json_list)
+            self.save_component_ecs_service(second_service_dict)
         except timeout_exceptions.FunctionTimedOut as e:
             LOGGER.warning(f'Parse and apply templates failed: {str(e)}')
             result = False
@@ -215,7 +216,7 @@ class BackendCore:
         if not result:
             return result, msg
 
-        ecs_service_id_list = self.get_ecs_service_id_list()
+        ecs_service_id_list = [id for _, id in self.get_ecs_service_dict().items()]
         try:
             result, msg = self.uninstall_json_templates(ecs_service_id_list)
         except timeout_exceptions.FunctionTimedOut as e:
@@ -297,49 +298,12 @@ class BackendCore:
 
         return True, 'Uninstall services successfully'
 
-    def query_service_id_by_name(self, service_name):
-        ecsm_host = str(Context.get_parameter('ECSM_HOST'))
-        ecsm_port = str(Context.get_parameter('ECSM_PORT'))
-        remote_api_url = merge_address(ip=ecsm_host, 
-                                    port=ecsm_port, 
-                                    path=NetworkAPIPath.BACKEND_ECSM_QUERY_SERVICE.format(service_name=service_name))   
-                
-        service_id = None
-        
-        max_retries = 10
-        retry_count = 0
-        while retry_count < max_retries:
-            try:
-                response_data = http_request(
-                    url=remote_api_url,
-                    method=NetworkAPIMethod.BACKEND_ECSM_QUERY_SERVICE,
-                    timeout=2
-                )
-                
-                # 检查返回值是否有效
-                if not response_data:
-                    LOGGER.warning("Empty response from remote API.")
-                elif isinstance(response_data, dict) and response_data.get('status') == 200:
-                    service_id = response_data["data"]["list"][0]["id"]
-                    break
-                else:
-                    error_msg = response_data.get('message', 'Unknown error') if isinstance(response_data, dict) else 'Invalid response format'
-                    LOGGER.warning(f"Remote API returned non-success status or invalid data: {error_msg}")
-            except Exception as e:
-                LOGGER.warning(f"Failed to fetch or parse remote node info: {e}")
-                
-            retry_count += 1
-            if retry_count < max_retries:
-                time.sleep(1)
-        
-        return service_id
-
     @timeout(120)
     def install_json_templates(self, json_docs):
         if not json_docs:
             return False, 'components json data is empty', []
         
-        service_id_list = []
+        service_dict = {}
         
         for json_doc in json_docs:
             ecsm_host = str(Context.get_parameter('ECSM_HOST'))
@@ -371,14 +335,16 @@ class BackendCore:
                         LOGGER.warning("Empty response from remote API.")
                     elif isinstance(response_data, dict) and response_data.get('status') == 200:
                         _result = True
+                        service_name = json_doc['name']
                         service_id = response_data["data"]["id"]
-                        service_id_list.append(service_id)
+                        service_dict[service_name] = service_id
                         break
                     elif isinstance(response_data, dict) and response_data.get('status') == 31006:
                         # 服务名字已存在，说明已下装完成但丢失了返回信息，于是重新查询service_id
                         _result = True
-                        service_id = self.query_service_id_by_name(json_doc['name'])
-                        service_id_list.append(service_id)
+                        service_name = json_doc['name']
+                        service_id = ECSHelper.query_service_id_by_name(service_name)
+                        service_dict[service_name] = service_id
                         break
                     else:
                         error_msg = response_data.get('message', 'Unknown error') if isinstance(response_data, dict) else 'Invalid response format'
@@ -391,12 +357,12 @@ class BackendCore:
                     time.sleep(1)
             
             if not _result:
-                return False, 'unexpected system error, please refer to logs in backend', service_id_list
+                return False, 'unexpected system error, please refer to logs in backend', service_dict
 
-        return True, 'Install services successfully', service_id_list
+        return True, 'Install services successfully', service_dict
 
-    def save_component_ecs_service_id(self, service_id_list):
-        self.cur_ecs_service_id_list.extend(service_id_list)
+    def save_component_ecs_service(self, service_dict):
+        self.cur_ecs_service_dict.update(service_dict)
 
     def extract_service_from_source_deployment(self, source_deploy):
         service_dict = {}
@@ -437,11 +403,11 @@ class BackendCore:
         self.cur_yaml_docs = None
         FileOps.remove_file(self.save_yaml_path)
 
-    def get_ecs_service_id_list(self):
-        return self.cur_ecs_service_id_list
+    def get_ecs_service_dict(self):
+        return self.cur_ecs_service_dict
 
-    def clear_ecs_service_id(self):
-        self.cur_ecs_service_id_list = []
+    def clear_ecs_service_dict(self):
+        self.cur_ecs_service_dict = {}
 
     def find_service_by_id(self, service_id):
         for service in self.services:

@@ -52,6 +52,7 @@ class NetworkAPIPath:
     BACKEND_ECSM_INSTALL_SERVICE = '/api/v1/service'
     BACKEND_ECSM_UNINSTALL_SERVICE = '/api/v1/service/destroy/ids'
     BACKEND_ECSM_QUERY_SERVICE = '/api/v1/service?pageNum=1&pageSize=10&name={service_name}'
+    BACKEND_ECSM_GET_SERVICE_INFO = '/api/v1/container/service?pageNum=1&pageSize=10&serviceIds[]={service_id}'
 
 
 class NetworkAPIMethod:
@@ -108,5 +109,6 @@ class NetworkAPIMethod:
     BACKEND_ECSM_INSTALL_SERVICE = 'POST'
     BACKEND_ECSM_UNINSTALL_SERVICE = 'POST'
     BACKEND_ECSM_QUERY_SERVICE = 'GET'
+    BACKEND_ECSM_GET_SERVICE_INFO = 'GET'
 
 

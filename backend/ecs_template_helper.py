@@ -1,6 +1,7 @@
 import time
 
 from template_helper import TemplateHelper
+from ecs_helper import ECSHelper
 
 from core.lib.common import Context, LOGGER
 from core.lib.network import merge_address
@@ -124,17 +125,9 @@ class ECSTemplateHelper(TemplateHelper):
             }
         }
         
-        import random
-        import string
-        def generate_service_name(prefix, length=8):
-            # 定义可用的字符：大写字母、小写字母、数字
-            characters = string.ascii_letters + string.digits  # a-z, A-Z, 0-9
-            random_suffix = ''.join(random.choices(characters, k=length))
-            return f"{prefix}-{random_suffix}"
-
         # 构建最终的 JSON 结构
         final_json = {
-            "name": generate_service_name(prefix=f"{component_name}_service", length=8),
+            "name": ECSHelper.generate_service_name(prefix=component_name, length=8),
             "image": new_image_section,
             "node": {
                 "names": []
