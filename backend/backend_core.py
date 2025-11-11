@@ -262,32 +262,77 @@ class BackendCore:
                 
         _result = False
 
-        try:
-            response_data = http_request(
-                url=remote_api_url,
-                method=NetworkAPIMethod.BACKEND_ECSM_UNINSTALL_SERVICE,
-                headers={
-                    'Content-Type': 'application/json'
-                },
-                json={"ids": service_id_list}
-                
-            )
-            # 检查返回值是否有效
-            if not response_data:
-                LOGGER.warning("Empty response from remote API.")
-            elif isinstance(response_data, dict) and response_data.get('status') == 200:
-                _result = True
-                LOGGER.info(f"Service {service_id_list} uninstalled successfully")
-            else:
-                error_msg = response_data.get('message', 'Unknown error') if isinstance(response_data, dict) else 'Invalid response format'
-                LOGGER.warning(f"Remote API returned non-success status or invalid data: {error_msg}")
-        except Exception as e:
-            LOGGER.warning(f"Failed to fetch or parse remote node info: {e}")
+        max_retries = 10
+        retry_count = 0
+        while retry_count < max_retries:
+            try:
+                response_data = http_request(
+                    url=remote_api_url,
+                    method=NetworkAPIMethod.BACKEND_ECSM_UNINSTALL_SERVICE,
+                    headers={
+                        'Content-Type': 'application/json'
+                    },
+                    json={"ids": service_id_list},
+                    timeout=5
+                )
+                # 检查返回值是否有效
+                if not response_data:
+                    LOGGER.warning("Empty response from remote API.")
+                elif isinstance(response_data, dict) and response_data.get('status') == 200:
+                    _result = True
+                    LOGGER.info(f"Service {service_id_list} uninstalled successfully")
+                    break
+                else:
+                    error_msg = response_data.get('message', 'Unknown error') if isinstance(response_data, dict) else 'Invalid response format'
+                    LOGGER.warning(f"Remote API returned non-success status or invalid data: {error_msg}")
+            except Exception as e:
+                LOGGER.warning(f"Failed to fetch or parse remote node info: {e}")
+            
+            retry_count += 1
+            if retry_count < max_retries:
+                time.sleep(1)
         
         if not _result:
             return False, 'unexpected system error, please refer to logs in backend'
 
         return True, 'Uninstall services successfully'
+
+    def query_service_id_by_name(self, service_name):
+        ecsm_host = str(Context.get_parameter('ECSM_HOST'))
+        ecsm_port = str(Context.get_parameter('ECSM_PORT'))
+        remote_api_url = merge_address(ip=ecsm_host, 
+                                    port=ecsm_port, 
+                                    path=NetworkAPIPath.BACKEND_ECSM_QUERY_SERVICE.format(service_name=service_name))   
+                
+        service_id = None
+        
+        max_retries = 10
+        retry_count = 0
+        while retry_count < max_retries:
+            try:
+                response_data = http_request(
+                    url=remote_api_url,
+                    method=NetworkAPIMethod.BACKEND_ECSM_QUERY_SERVICE,
+                    timeout=1
+                )
+                
+                # 检查返回值是否有效
+                if not response_data:
+                    LOGGER.warning("Empty response from remote API.")
+                elif isinstance(response_data, dict) and response_data.get('status') == 200:
+                    service_id = response_data["data"]["list"][0]["id"]
+                    break
+                else:
+                    error_msg = response_data.get('message', 'Unknown error') if isinstance(response_data, dict) else 'Invalid response format'
+                    LOGGER.warning(f"Remote API returned non-success status or invalid data: {error_msg}")
+            except Exception as e:
+                LOGGER.warning(f"Failed to fetch or parse remote node info: {e}")
+                
+            retry_count += 1
+            if retry_count < max_retries:
+                time.sleep(1)
+        
+        return service_id
 
     @timeout(120)
     def install_json_templates(self, json_docs):
@@ -307,27 +352,43 @@ class BackendCore:
             
             LOGGER.info(f"Installing service, json config: {json.dumps(json_doc)}")
 
-            try:
-                response_data = http_request(
-                    url=remote_api_url,
-                    method=NetworkAPIMethod.BACKEND_ECSM_INSTALL_SERVICE,
-                    headers={
-                        'Content-Type': 'application/json'
-                    },
-                    json=json_doc
-                )
-                # 检查返回值是否有效
-                if not response_data:
-                    LOGGER.warning("Empty response from remote API.")
-                elif isinstance(response_data, dict) and response_data.get('status') == 200:
-                    _result = True
-                    service_id = response_data["data"]["id"]
-                    service_id_list.append(service_id)
-                else:
-                    error_msg = response_data.get('message', 'Unknown error') if isinstance(response_data, dict) else 'Invalid response format'
-                    LOGGER.warning(f"Remote API returned non-success status or invalid data: {error_msg}")
-            except Exception as e:
-                LOGGER.warning(f"Failed to fetch or parse remote node info: {e}")
+            max_retries = 10
+            retry_count = 0
+            while retry_count < max_retries:
+                try:
+                    response_data = http_request(
+                        url=remote_api_url,
+                        method=NetworkAPIMethod.BACKEND_ECSM_INSTALL_SERVICE,
+                        headers={
+                            'Content-Type': 'application/json'
+                        },
+                        json=json_doc,
+                        timeout=5
+                    )
+                    
+                    # 检查返回值是否有效
+                    if not response_data:
+                        LOGGER.warning("Empty response from remote API.")
+                    elif isinstance(response_data, dict) and response_data.get('status') == 200:
+                        _result = True
+                        service_id = response_data["data"]["id"]
+                        service_id_list.append(service_id)
+                        break
+                    elif isinstance(response_data, dict) and response_data.get('status') == 31006:
+                        # 服务名字已存在，说明已下装完成但丢失了返回信息，于是重新查询service_id
+                        _result = True
+                        service_id = self.query_service_id_by_name(json_doc['name'])
+                        service_id_list.append(service_id)
+                        break
+                    else:
+                        error_msg = response_data.get('message', 'Unknown error') if isinstance(response_data, dict) else 'Invalid response format'
+                        LOGGER.warning(f"Remote API returned non-success status or invalid data: {error_msg}")
+                except Exception as e:
+                    LOGGER.warning(f"Failed to fetch or parse remote node info: {e}")
+                    
+                retry_count += 1
+                if retry_count < max_retries:
+                    time.sleep(1)
             
             if not _result:
                 return False, 'unexpected system error, please refer to logs in backend', service_id_list

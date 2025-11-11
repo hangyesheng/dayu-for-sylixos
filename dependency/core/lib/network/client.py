@@ -12,7 +12,7 @@ def http_request(url,
     _method = 'GET' if not method else method
 
     try:
-        response = requests.request(method=_method, url=url, **kwargs)
+        response = requests.request(method=_method, url=url, timeout=_maxTimeout, **kwargs)
         if response.status_code == 200:
             if no_decode:
                 return response
