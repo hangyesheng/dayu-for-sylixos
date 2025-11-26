@@ -1,6 +1,6 @@
 import abc
 
-from core.lib.common import ClassFactory, ClassType, YamlOps, Context,FileNameConstant
+from core.lib.common import ClassFactory, ClassType, Context,FileNameConstant
 from .base_config_extraction import BaseConfigExtraction
 
 __all__ = ('SimpleConfigExtraction',)
@@ -9,6 +9,7 @@ __all__ = ('SimpleConfigExtraction',)
 @ClassFactory.register(ClassType.SCH_CONFIG_EXTRACTION, alias='simple')
 class SimpleConfigExtraction(BaseConfigExtraction, abc.ABC):
     def __call__(self, scheduler):
+        from core.lib.common import YamlOps
         config_path = Context.get_file_path(FileNameConstant.SCHEDULE_CONFIG.value)
         configs = YamlOps.read_yaml(config_path)
         scheduler.fps_list = configs['fps']

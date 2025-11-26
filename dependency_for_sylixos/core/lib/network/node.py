@@ -1,8 +1,10 @@
 from typing import List
 
-from core.lib.common import reverse_key_value_in_dict, Context
 from core.lib.network import find_all_ips
-from core.lib.common import Context
+from core.lib.common import Context, LOGGER
+from .sky_server import sky_request
+from .utils import merge_address
+from .api import NetworkAPIPath, NetworkAPIMethod
 
 
 class NodeInfo:
@@ -36,26 +38,24 @@ class NodeInfo:
 
     @staticmethod
     def __extract_node_info():
-        from kubernetes import client, config
-        config.load_incluster_config()
-        v1 = client.CoreV1Api()
-        nodes = v1.list_node().items
-
-        assert nodes, 'Invalid node config in KubeEdge system'
-
-        node_dict = {}
-        node_role = {}
-
-        for node in nodes:
-            node_name = node.metadata.name
-            for address in node.status.addresses:
-                if address.type == "InternalIP":
-                    node_dict[node_name] = address.address
-            if 'node-role.kubernetes.io/edge' in node.metadata.labels:
-                node_role[node_name] = 'edge'
-            if 'node-role.kubernetes.io/master' in node.metadata.labels:
-                node_role[node_name] = 'cloud'
-        node_dict_reverse = reverse_key_value_in_dict(node_dict)
+        backend_ip = str(Context.get_parameter('BACKEND_IP'))
+        backend_port = str(Context.get_parameter('BACKEND_PORT'))
+        remote_api_url = merge_address(ip=backend_ip,
+                                        port=backend_port,
+                                        path=NetworkAPIPath.BACKEND_NODE_INFO)
+        
+        response = sky_request(
+            url=remote_api_url,
+            method=NetworkAPIMethod.BACKEND_NODE_INFO
+        )
+        
+        response_data = response.json()
+        if response_data:
+            node_dict = response_data['node_dict']
+            node_dict_reverse = response_data['node_dict_reverse']
+            node_role = response_data['node_role']
+        else:
+            LOGGER.error('Failed to get node info from backend!')
 
         return node_dict, node_dict_reverse, node_role
 

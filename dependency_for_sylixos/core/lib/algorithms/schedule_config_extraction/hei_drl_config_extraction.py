@@ -1,7 +1,7 @@
 import abc
 import os
 
-from core.lib.common import ClassFactory, ClassType, YamlOps, Context, FileNameConstant
+from core.lib.common import ClassFactory, ClassType, Context, FileNameConstant
 from .base_config_extraction import BaseConfigExtraction
 
 __all__ = ('HEIDRLConfigExtraction',)
@@ -15,6 +15,7 @@ class HEIDRLConfigExtraction(BaseConfigExtraction, abc.ABC):
         self.HEI_HYPER_CONFIG = hei_hyper_config
 
     def __call__(self, scheduler):
+        from core.lib.common import YamlOps
         config_path = Context.get_file_path(os.path.join('scheduler/hei-drl', FileNameConstant.SCHEDULE_CONFIG.value))
         configs = YamlOps.read_yaml(config_path)
         scheduler.fps_list = configs['fps']

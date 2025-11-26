@@ -47,6 +47,15 @@ class NetworkAPIPath:
     BACKEND_EDGE_NODE = '/edge_node'
     BACKEND_DATASOURCE_STATE = '/datasource_state'
     BACKEND_RESET_DATASOURCE = '/reset_datasource'
+    BACKEND_ECSM_NODE = '/api/v1/node?pageNum=1&pageSize=10'
+    BACKEND_ECSM_IMAGE_CONFIG = '/api/v1/image/config'
+    BACKEND_ECSM_INSTALL_SERVICE = '/api/v1/service'
+    BACKEND_ECSM_UNINSTALL_SERVICE = '/api/v1/service/destroy/ids'
+    BACKEND_ECSM_QUERY_SERVICE = '/api/v1/service?pageNum=1&pageSize=10&name={service_name}'
+    BACKEND_ECSM_GET_SERVICE_INFO = '/api/v1/container/service?pageNum=1&pageSize=10&serviceIds[]={service_id}'
+    BACKEND_ECSM_QUERY_ALL_SERVICE = '/api/v1/service?pageNum=1&pageSize=10'
+    BACKEND_NODE_INFO = '/node_info'
+    BACKEND_PORT_INFO = '/port_info'
 
 
 class NetworkAPIMethod:
@@ -98,5 +107,14 @@ class NetworkAPIMethod:
     BACKEND_EDGE_NODE = 'GET'
     BACKEND_DATASOURCE_STATE = 'GET'
     BACKEND_RESET_DATASOURCE = 'POST'
+    BACKEND_ECSM_NODE = 'GET'
+    BACKEND_ECSM_IMAGE_CONFIG = 'GET'
+    BACKEND_ECSM_INSTALL_SERVICE = 'POST'
+    BACKEND_ECSM_UNINSTALL_SERVICE = 'POST'
+    BACKEND_ECSM_QUERY_SERVICE = 'GET'
+    BACKEND_ECSM_GET_SERVICE_INFO = 'GET'
+    BACKEND_ECSM_QUERY_ALL_SERVICE = 'GET'
+    BACKEND_NODE_INFO = 'GET'
+    BACKEND_PORT_INFO = 'GET'
 
 

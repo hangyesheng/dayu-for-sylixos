@@ -1,11 +1,12 @@
 import time
+import copy
 
 from template_helper import TemplateHelper
 from ecs_helper import ECSHelper
 
-from core.lib.common import Context, LOGGER
+from core.lib.common import Context, LOGGER, SystemConstant
 from core.lib.network import merge_address
-from core.lib.network import NodeInfo
+from core.lib.network import NodeInfo, PortInfo
 from core.lib.network import NetworkAPIPath, NetworkAPIMethod
 from core.lib.network import http_request
 
@@ -32,8 +33,9 @@ class ECSTemplateHelper(TemplateHelper):
             docs_list.extend(self.finetune_genetator_json(template_dict['generator'], source_deploy))
         if not scopes or 'processor' in scopes:
             docs_list.extend(self.finetune_processor_json(template_dict['processor'], cloud_node, source_deploy))
+            docs_list.append(self.finetune_ecs_yolo_image_json(edge_nodes))
         if not scopes or 'controller' in scopes:
-            docs_list.append(self.finetune_controller_json(template_dict['controller'], edge_nodes, cloud_node))
+            docs_list.extend(self.finetune_controller_json(template_dict['controller'], edge_nodes, cloud_node))
         
         return docs_list
 
@@ -52,6 +54,21 @@ class ECSTemplateHelper(TemplateHelper):
         # 将 imagePullPolicy 改为 pullPolicy
         if 'imagePullPolicy' in pod_template:
             pod_template['pullPolicy'] = pod_template.pop('imagePullPolicy')
+        
+        # 添加 BACKEND_IP 和 BACKEND_PORT 环境变量
+        backend_hostname = NodeInfo.get_cloud_node()
+        backend_port = PortInfo.get_component_port(SystemConstant.BACKEND.value)
+        
+        if pod_template.get('env') is None:
+            pod_template['env'] = []
+        pod_template['env'].append({
+            'name': 'BACKEND_IP',
+            'value': NodeInfo.hostname2ip(backend_hostname)
+        })
+        pod_template['env'].append({
+            'name': 'BACKEND_PORT',
+            'value': str(backend_port)
+        })
         
         template_dict['pod-template'] = pod_template
         return template_dict
@@ -177,6 +194,7 @@ class ECSTemplateHelper(TemplateHelper):
             
             # 添加edge node
             template_doc["node"]["names"].append(node)
+            template_doc['image']['config']['process']['env'].append(f'NODE_NAME={node}')
 
             template_docs.append(template_doc)
 
@@ -197,10 +215,11 @@ class ECSTemplateHelper(TemplateHelper):
             edge_nodes = service_dict[service_id]['node']
             LOGGER.warning("Using default selection plan.")
 
-            # 添加edge node
-            template_doc['node']['names'].extend(edge_nodes)
-
-            template_docs.append(template_doc)
+            for node in edge_nodes:
+                new_template_doc = copy.deepcopy(template_doc)
+                new_template_doc['node']['names'].append(node)
+                new_template_doc['image']['config']['process']['env'].append(f'NODE_NAME={node}')
+                template_docs.append(new_template_doc)
 
         return template_docs
     
@@ -210,6 +229,29 @@ class ECSTemplateHelper(TemplateHelper):
 
         template_json_dict = self._request_ecs_image_config(template_dict['pod-template']['ref'])
         template_doc = self.fill_template(template_dict, template_json_dict, 'controller')
+
+        template_docs = []
+        for node in edge_nodes:
+            new_template_doc = copy.deepcopy(template_doc)
+            new_template_doc['node']['names'].append(node)
+            new_template_doc['image']['config']['process']['env'].append(f'NODE_NAME={node}')
+            template_docs.append(new_template_doc)
+
+        return template_docs
+
+    def finetune_ecs_yolo_image_json(self, edge_nodes):
+        ecs_yolo_image_name = "ecs_yolo_image@latest#sylixos"
+        template_json_dict = self._request_ecs_image_config(ecs_yolo_image_name)
+        
+        default_template_dict = {
+            'pod-template': {
+                "ref": ecs_yolo_image_name,
+                "pullPolicy": "IfNotPresent",
+                "env": [],
+            }
+        }
+        
+        template_doc = self.fill_template(default_template_dict, template_json_dict, 'ecs-yolo-image')
 
         # 添加edge node
         template_doc['node']['names'].extend(edge_nodes)

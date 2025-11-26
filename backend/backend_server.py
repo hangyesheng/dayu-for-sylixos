@@ -4,14 +4,14 @@ import threading
 import time
 from datetime import datetime
 
-from fastapi import FastAPI, UploadFile, File, Body, BackgroundTasks
+from fastapi import FastAPI, UploadFile, File, Body, BackgroundTasks, Request
 from fastapi.routing import APIRoute
 from starlette.responses import JSONResponse, FileResponse
 
 from fastapi.middleware.cors import CORSMiddleware
 
 from core.lib.common import LOGGER, Counter, Queue, FileOps
-from core.lib.network import http_request, NetworkAPIMethod, NetworkAPIPath
+from core.lib.network import http_request, NetworkAPIMethod, NetworkAPIPath, NodeInfo, PortInfo
 
 from backend_core import BackendCore
 from kube_helper import KubeHelper
@@ -152,6 +152,16 @@ class BackendServer:
                      self.reset_datasource,
                      response_class=JSONResponse,
                      methods=[NetworkAPIMethod.BACKEND_RESET_DATASOURCE]
+                     ),
+            APIRoute(NetworkAPIPath.BACKEND_NODE_INFO,
+                     self.get_node_info,
+                     response_class=JSONResponse,
+                     methods=[NetworkAPIMethod.BACKEND_NODE_INFO]
+                     ),
+            APIRoute(NetworkAPIPath.BACKEND_PORT_INFO,
+                     self.get_port_info,
+                     response_class=JSONResponse,
+                     methods=[NetworkAPIMethod.BACKEND_PORT_INFO]
                      ),
         ], log_level='trace', timeout=6000)
 
@@ -712,3 +722,22 @@ class BackendServer:
             filename=f'{file_name}.json',
             background=backtask.add_task(FileOps.remove_file, self.server.log_file_path)
         )
+
+    async def get_node_info(self):
+        node_dict = NodeInfo.get_node_info()
+        node_dict_reverse = NodeInfo.get_node_info_reverse()
+        node_role = NodeInfo.get_node_info_role()
+        return {
+            'node_dict': node_dict,
+            'node_dict_reverse': node_dict_reverse,
+            'node_role': node_role
+        }
+        
+    async def get_port_info(self, request: Request):
+        form_data = await request.form()
+        data = dict(form_data)
+        
+        ports_dict = PortInfo.get_all_ports(data['keyword'])
+        return {
+            'ports_dict': ports_dict
+        }

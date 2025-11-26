@@ -5,7 +5,7 @@ import uuid
 from kube_helper import KubeHelper
 from template_helper import TemplateHelper
 
-from core.lib.common import LOGGER, SystemConstant, deep_merge
+from core.lib.common import LOGGER, SystemConstant, deep_merge, Context
 from core.lib.network import NodeInfo, PortInfo, merge_address, NetworkAPIPath, NetworkAPIMethod, http_request
 
 
@@ -17,7 +17,31 @@ class KubeTemplateHelper(TemplateHelper):
         yaml_dict = {}
         yaml_dict.update(self.load_policy_apply_yaml(policy))
         yaml_dict.update({'processor': self.load_application_apply_yaml(service_dict)})
+        for component_name, component_dict in yaml_dict.items():
+            if component_name == 'processor':
+                for index, service_id in enumerate(component_dict):
+                    yaml_doc = component_dict[service_id]['service']
+                    component_dict[service_id]['service'] = self._modify_yaml_dict(yaml_doc)
+            else:
+                yaml_dict[component_name] = self._modify_yaml_dict(component_dict)
         return yaml_dict
+    
+    def _modify_yaml_dict(self, template_dict):
+        pod_template = template_dict['pod-template']
+        
+        if pod_template.get('env') is None:
+            pod_template['env'] = []
+        pod_template['env'].append({
+            'name': 'ECSM_HOST',
+            'value': str(Context.get_parameter('ECSM_HOST'))
+        })
+        pod_template['env'].append({
+            'name': 'ECSM_PORT',
+            'value': str(Context.get_parameter('ECSM_PORT'))
+        })
+        
+        template_dict['pod-template'] = pod_template
+        return template_dict
     
     def finetune_parameters(self, template_dict, source_deploy, edge_nodes, cloud_node, scopes=None):
         docs_list = []

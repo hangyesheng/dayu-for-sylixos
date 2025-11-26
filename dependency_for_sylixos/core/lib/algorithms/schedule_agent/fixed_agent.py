@@ -1,5 +1,5 @@
 import abc
-from core.lib.common import ClassFactory, ClassType, KubeConfig, Context, ConfigLoader
+from core.lib.common import ClassFactory, ClassType, KubeConfig, Context
 from core.lib.estimation import OverheadEstimator
 
 from .base_agent import BaseAgent
@@ -18,15 +18,15 @@ class FixedAgent(BaseAgent, abc.ABC):
 
         if configuration is None or isinstance(configuration, dict):
             self.fixed_configuration = configuration
-        elif isinstance(configuration, str):
-            self.fixed_configuration = ConfigLoader.load(Context.get_file_path(configuration))
+        # elif isinstance(configuration, str):
+        #     self.fixed_configuration = ConfigLoader.load(Context.get_file_path(configuration))
         else:
             raise TypeError(f'Input "configuration" must be of type str or dict, get type {type(configuration)}')
 
         if offloading is None or isinstance(offloading, dict):
             self.fixed_offloading = offloading
-        elif isinstance(offloading, str):
-            self.fixed_offloading = ConfigLoader.load(Context.get_file_path(offloading))
+        # elif isinstance(offloading, str):
+        #     self.fixed_offloading = ConfigLoader.load(Context.get_file_path(offloading))
         else:
             raise TypeError(f'Input "offloading" must be of type str or dict, get type {type(configuration)}')
 

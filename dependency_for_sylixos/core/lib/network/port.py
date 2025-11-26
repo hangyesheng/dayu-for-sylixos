@@ -1,5 +1,9 @@
 
-from core.lib.common import Context, SystemConstant
+from core.lib.common import Context, SystemConstant, LOGGER
+from .sky_server import sky_request
+from .utils import merge_address
+from .api import NetworkAPIPath, NetworkAPIMethod
+
 
 
 class PortInfo:
@@ -14,18 +18,25 @@ class PortInfo:
 
     @staticmethod
     def get_all_ports(keyword: str) -> dict:
-        import kubernetes as k8s
+        backend_ip = str(Context.get_parameter('BACKEND_IP'))
+        backend_port = str(Context.get_parameter('BACKEND_PORT'))
+        remote_api_url = merge_address(ip=backend_ip,
+                                        port=backend_port,
+                                        path=NetworkAPIPath.BACKEND_PORT_INFO)
         
-        ports_dict = {}
-        k8s.config.load_incluster_config()
-        v1 = k8s.client.CoreV1Api()
-        namespace = Context.get_parameter('NAMESPACE')
-        svcs = v1.list_namespaced_service(namespace)
-        for svc in svcs.items:
-            if keyword in svc.metadata.name:
-                if svc.spec.type != "NodePort":
-                    assert None, f"Service '{svc.metadata.name}' is not of type NodePort."
-                ports_dict[svc.metadata.name] = int(svc.spec.ports[0].node_port)
+        response = sky_request(
+            url=remote_api_url,
+            method=NetworkAPIMethod.BACKEND_PORT_INFO,
+            data={'keyword': keyword}
+        )
+        
+        response_data = response.json()
+        
+        if response_data:
+            ports_dict = response_data['ports_dict']
+        else:
+            LOGGER.error('Failed to get port info from backend!')
+            
         return ports_dict
 
     @staticmethod

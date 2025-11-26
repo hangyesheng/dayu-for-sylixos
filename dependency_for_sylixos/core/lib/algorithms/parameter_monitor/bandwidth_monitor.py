@@ -1,6 +1,5 @@
 import abc
 import threading
-from func_timeout import func_set_timeout as timeout
 
 from .base_monitor import BaseMonitor
 
@@ -47,6 +46,7 @@ class BandwidthMonitor(BaseMonitor, abc.ABC):
 
     def get_parameter_value(self):
         import iperf3
+        from func_timeout import func_set_timeout as timeout
         if self.is_server:
             return 0
 

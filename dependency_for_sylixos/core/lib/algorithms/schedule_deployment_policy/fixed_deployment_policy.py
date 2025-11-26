@@ -3,7 +3,7 @@ import copy
 
 from .base_deployment_policy import BaseDeploymentPolicy
 
-from core.lib.common import ClassFactory, ClassType, LOGGER, ConfigLoader, Context
+from core.lib.common import ClassFactory, ClassType, LOGGER, Context
 
 __all__ = ('FixedDeploymentPolicy',)
 
@@ -17,8 +17,8 @@ class FixedDeploymentPolicy(BaseDeploymentPolicy, abc.ABC):
         """
         if policy is None or isinstance(policy, dict):
             self.fixed_policy = policy
-        elif isinstance(policy, str):
-            self.fixed_policy = ConfigLoader.load(Context.get_file_path(policy))
+        # elif isinstance(policy, str):
+        #     self.fixed_policy = ConfigLoader.load(Context.get_file_path(policy))
         else:
             raise TypeError(f'Input "policy" must be of type str or dict, get type {type(policy)}')
 

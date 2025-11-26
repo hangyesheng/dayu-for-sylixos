@@ -20,8 +20,6 @@ class DetectorProcessor(Processor):
     def __init__(self):
         super().__init__()
 
-        self.detector = Context.get_instance('Detector')
-
         self.frame_size = None
 
         # === VSOA Client 初始化 ===
@@ -146,12 +144,3 @@ class DetectorProcessor(Processor):
 
         return task
 
-    def infer(self, images):
-        assert self.detector, 'No detector defined!'
-
-        LOGGER.debug(f'[Batch Size] Car detection batch: {len(images)}')
-
-        with Timer(f'Detection / {len(images)} frame'):
-            process_output = self.detector(images)
-
-        return process_output
