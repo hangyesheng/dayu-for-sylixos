@@ -121,6 +121,10 @@ spec:
                   value: "8000"
                 - name: FILE_PREFIX
                   value: "$DATASOURCE_DATA_ROOT"
+                - name: ECSM_HOST
+                  value: "$BACKEND_ECSM_HOST"
+                - name: ECSM_PORT
+                  value: "$BACKEND_ECSM_PORT"
               image: $REGISTRY/$REPOSITORY/datasource:$TAG
               imagePullPolicy: IfNotPresent
               name: datasource
