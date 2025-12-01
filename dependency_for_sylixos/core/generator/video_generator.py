@@ -57,24 +57,27 @@ class VideoGenerator(Generator):
         # initialize with default schedule policy
         self.after_schedule_operation(self, None)
 
-        self.generator_saved_dir = f"./data_of_source_{self.source_id}/"
+        self.generator_saved_dir = f"/apps/generator/data_of_source_{self.source_id}/"
         FileOps.remove_file(self.generator_saved_dir)
         FileOps.create_directory(self.generator_saved_dir)
 
         self.write_meta_data_to_file(self.meta_data, self.generator_saved_dir + 'meta.json')
         
-        command = ["./rtsp_solver", "--url", self.video_data_source, 
+        command = ["/apps/generator/rtsp_solver", "--url", self.video_data_source, 
                                     "--saved_dir", self.generator_saved_dir, 
                                     "--meta_file", self.generator_saved_dir + "meta.json"]
+        
+        LOGGER.info(f"Starting rtsp_solver with command: {' '.join(command)}")
 
         with managed_process(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, start_new_session=True) as process:
-            print("子进程已启动, PID:", process.pid)
+            LOGGER.info(f"Subprocess started with PID: {process.pid}")
 
             while True:
                 if not self.getter_filter(self):
                     LOGGER.info('[Filter Getter] step to next round of getter.')
                     continue
                 self.write_meta_data_to_file(self.meta_data, self.generator_saved_dir + 'meta.json')
+                LOGGER.info(f"Start getting data from source {self.source_id}...")
                 self.data_getter(self)
 
                 self.request_schedule_policy()

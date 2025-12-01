@@ -32,6 +32,8 @@ class PortInfo:
         
         response_data = response.json()
         
+        LOGGER.info(f"Get port info from backend: {response_data}")
+        
         if response_data:
             ports_dict = response_data['ports_dict']
         else:

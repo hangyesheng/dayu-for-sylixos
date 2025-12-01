@@ -29,11 +29,13 @@ class RtspVideoGetter(BaseDataGetter, abc.ABC):
         FileOps.remove_file(file_name)
 
     def __call__(self, system):
-        saved_dir = system.saved_dir
+        saved_dir = system.generator_saved_dir
         file_name = saved_dir + f"{self.file_index}.mp4"
 
         while not os.path.exists(file_name):
             time.sleep(0.5)
+            
+        LOGGER.info(f"New video file detected: {file_name}")
 
         # generate tasks in parallel to avoid getting stuck with video compression
         new_task_id = Counter.get_count('task_id')
