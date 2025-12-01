@@ -247,7 +247,7 @@ class ECSTemplateHelper(TemplateHelper):
         default_template_dict = {
             'pod-template': {
                 "ref": ecs_yolo_image_name,
-                "pullPolicy": "IfNotPresent",
+                "pullPolicy": "Always",
                 "env": [],
             }
         }

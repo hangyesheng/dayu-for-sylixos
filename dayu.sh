@@ -71,7 +71,7 @@ spec:
       spec:
         containers:
           - image: $REGISTRY/redis:latest
-            imagePullPolicy: IfNotPresent
+            imagePullPolicy: Always
             name: redis
             ports:
               - containerPort: 6379
@@ -126,7 +126,7 @@ spec:
                 - name: ECSM_PORT
                   value: "$BACKEND_ECSM_PORT"
               image: $REGISTRY/$REPOSITORY/datasource:$TAG
-              imagePullPolicy: IfNotPresent
+              imagePullPolicy: Always
               name: datasource
               ports:
                 - containerPort: 8000
@@ -172,7 +172,7 @@ spec:
             - name: ECSM_PORT
               value: "$BACKEND_ECSM_PORT"
             image: $REGISTRY/$REPOSITORY/backend:$TAG
-            imagePullPolicy: IfNotPresent
+            imagePullPolicy: Always
             name: backend
             ports:
               - containerPort: 8000
@@ -218,7 +218,7 @@ spec:
             - name: VITE_PUBLIC_PATH
               value: /vue-next-admin-preview/
             image: $REGISTRY/$REPOSITORY/frontend:$TAG
-            imagePullPolicy: IfNotPresent
+            imagePullPolicy: Always
             name: frontend
             ports:
               - containerPort: 8000
