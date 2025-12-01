@@ -32,8 +32,9 @@ class ECSTemplateHelper(TemplateHelper):
         if not scopes or 'generator' in scopes:
             docs_list.extend(self.finetune_genetator_json(template_dict['generator'], source_deploy))
         if not scopes or 'processor' in scopes:
-            docs_list.extend(self.finetune_processor_json(template_dict['processor'], cloud_node, source_deploy))
-            docs_list.append(self.finetune_ecs_yolo_image_json(edge_nodes))
+            if template_dict['processor']:
+                docs_list.extend(self.finetune_processor_json(template_dict['processor'], cloud_node, source_deploy))
+                docs_list.append(self.finetune_ecs_yolo_image_json(edge_nodes))
         if not scopes or 'controller' in scopes:
             docs_list.extend(self.finetune_controller_json(template_dict['controller'], edge_nodes, cloud_node))
         

@@ -8,7 +8,7 @@ import func_timeout.exceptions as timeout_exceptions
 import os
 import time
 from core.lib.content import Task
-from core.lib.common import LOGGER, Context, YamlOps, FileOps, Counter, SystemConstant
+from core.lib.common import LOGGER, Context, YamlOps, FileOps, Counter, SystemConstant, TaskConstant
 from core.lib.network import http_request, NodeInfo, PortInfo, merge_address, NetworkAPIPath, NetworkAPIMethod
 
 from kube_helper import KubeHelper
@@ -81,7 +81,7 @@ class BackendCore:
         return load_file_name.split('.')[0]
 
     def parse_and_apply_templates(self, policy, source_deploy):
-        service_dict, source_deploy = self.extract_service_from_source_deployment(source_deploy)
+        service_dict = self.extract_service_from_source_deployment(source_deploy)
 
         kube_service_dict = {}
         ecs_service_dict = {}
@@ -253,7 +253,7 @@ class BackendCore:
     @timeout(120)
     def uninstall_json_templates(self, service_id_list):
         if not service_id_list:
-            return False, 'service id list is empty'
+            return True, 'service id list is empty'
         
         ecsm_host = str(Context.get_parameter('ECSM_HOST'))
         ecsm_port = str(Context.get_parameter('ECSM_PORT'))
@@ -301,7 +301,7 @@ class BackendCore:
     @timeout(120)
     def install_json_templates(self, json_docs):
         if not json_docs:
-            return False, 'components json data is empty', []
+            return True, 'components json data is empty', []
         
         service_dict = {}
         
@@ -368,31 +368,60 @@ class BackendCore:
         self.cur_ecs_service_dict.update(service_dict)
 
     def extract_service_from_source_deployment(self, source_deploy):
+
+        def bfs_dag(dag_graph, id_to_name, node_set, extracted_dag, service_dict):
+            source_list = dag_graph[TaskConstant.START.value]
+            queue = deque(source_list)
+            visited = set(source_list)
+            while queue:
+                current_node = queue.popleft()
+                current_node_item = dag_graph[current_node]
+
+                service_id = current_node_item['id']
+                service = self.find_service_by_id(service_id)
+                service_name = service['service']
+                service_yaml = service['yaml']
+                id_to_name[service_id] = service_name
+
+                if service_id in service_dict:
+                    pre_node_list = service_dict[service_id]['node']
+                    service_dict[service_id]['node'] = list(set(pre_node_list + node_set))
+                else:
+                    service_dict[service_id] = {'service_name': service_name, 'yaml': service_yaml, 'node': node_set}
+                extracted_dag[current_node_item['id']]['service'] = service
+
+                for child_id in current_node_item['succ']:
+                    if child_id not in visited:
+                        queue.append(child_id)
+                        visited.add(child_id)
+
         service_dict = {}
 
         for s in source_deploy:
             dag = s['dag']
             node_set = s['node_set']
             extracted_dag = copy.deepcopy(dag)
-            del extracted_dag['_start']
+            del extracted_dag[TaskConstant.START.value]
 
-            def get_service_callback(node_item):
-                service_id = node_item['id']
-                service = self.find_service_by_id(service_id)
-                service_name = service['service']
-                service_yaml = service['yaml']
-                if service_id in service_dict:
-                    pre_node_list = service_dict[service_id]['node']
-                    service_dict[service_id]['node'] = list(set(pre_node_list + node_set))
-                else:
-                    service_dict[service_id] = {'service_name': service_name, 'yaml': service_yaml, 'node': node_set}
+            id_to_name = {}
+            bfs_dag(dag, id_to_name, node_set, extracted_dag, service_dict)
 
-                extracted_dag[node_item['id']]['service'] = service
+            renamed_dag = {}
+            for old_key, node in extracted_dag.items():
+                old_id = node.get('id', old_key)
+                new_key = id_to_name.get(old_id, old_id)
 
-            self.bfs_dag(dag, get_service_callback)
-            s['dag'] = extracted_dag
+                node_new = copy.deepcopy(node)
+                node_new['id'] = new_key
+                if 'prev' in node_new:
+                    node_new['prev'] = [id_to_name.get(x, x) for x in node_new['prev']]
+                if 'succ' in node_new:
+                    node_new['succ'] = [id_to_name.get(x, x) for x in node_new['succ']]
 
-        return service_dict, source_deploy
+                renamed_dag[new_key] = node_new
+            s['dag'] = renamed_dag
+
+        return service_dict
 
     def get_yaml_docs(self):
         if self.cur_yaml_docs:
@@ -458,19 +487,6 @@ class BackendCore:
         url = f'{source_protocol}://{source_ip}:{source_port}/{source_type}{source_id}'
 
         return url
-
-    @staticmethod
-    def bfs_dag(dag_graph, dag_callback):
-        source_list = dag_graph['_start']
-        queue = deque(source_list)
-        visited = set(source_list)
-        while queue:
-            current_node_item = dag_graph[queue.popleft()]
-            dag_callback(current_node_item)
-            for child_id in current_node_item['succ']:
-                if child_id not in visited:
-                    queue.append(child_id)
-                    visited.add(child_id)
 
     @staticmethod
     def check_node_exist(node):
