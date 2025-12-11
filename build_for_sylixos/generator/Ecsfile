@@ -26,7 +26,7 @@ COPY ../../dependency_for_sylixos/core /apps/generator/core
 
 WORKDIR /apps/generator
 COPY ../../components_for_sylixos/generator /apps/generator
-COPY ./rtsp_solver /apps/generator/rtsp_solver
+COPY ./rtsp_solverex /apps/generator/rtsp_solverex
 
 CMD python3 /apps/generator/main.py
 

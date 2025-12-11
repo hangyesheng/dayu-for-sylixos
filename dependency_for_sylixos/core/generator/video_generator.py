@@ -63,11 +63,11 @@ class VideoGenerator(Generator):
 
         self.write_meta_data_to_file(self.meta_data, self.generator_saved_dir + 'meta.json')
         
-        command = ["/apps/generator/rtsp_solver", "--url", self.video_data_source, 
+        command = ["/apps/generator/rtsp_solverex", "--url", self.video_data_source, 
                                     "--saved_dir", self.generator_saved_dir, 
                                     "--meta_file", self.generator_saved_dir + "meta.json"]
         
-        LOGGER.info(f"Starting rtsp_solver with command: {' '.join(command)}")
+        LOGGER.info(f"Starting rtsp_solverex with command: {' '.join(command)}")
 
         with managed_process(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, start_new_session=True) as process:
             LOGGER.info(f"Subprocess started with PID: {process.pid}")

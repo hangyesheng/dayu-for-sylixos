@@ -62,7 +62,7 @@ class RtspVideoGetter(BaseDataGetter, abc.ABC):
         # retry when no video signal
         while not ret:
             if first_no_signal:
-                LOGGER.warning(f'No video signal from source {system.source_id}! Will retry...')
+                LOGGER.warning(f'No video signal from source {system.source_id}, url: {system.video_data_source}! Will retry...')
                 first_no_signal = False
             # Release and reopen to avoid stacking multiple sockets
             try:
@@ -76,7 +76,7 @@ class RtspVideoGetter(BaseDataGetter, abc.ABC):
             ret, frame = self.data_source_capture.read()
 
         if not first_no_signal:
-            LOGGER.info(f'Get video stream data from source {system.source_id}..')
+            LOGGER.info(f'Get video stream data from source {system.source_id}, url: {system.video_data_source}..')
 
         return frame
 
