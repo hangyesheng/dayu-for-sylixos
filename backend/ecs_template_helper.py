@@ -223,6 +223,11 @@ class ECSTemplateHelper(TemplateHelper):
             
             template_json_dict = self._request_ecs_image_config(template_dict['pod-template']['ref'])
             template_doc = self.fill_template(template_dict, template_json_dict, f'processor-{service_name}')
+            
+            service_port = PortInfo.get_component_port(f'processor-{service_name}')
+            if template_doc['image']['config']['process']['env'] is None:
+                template_doc['image']['config']['process']['env'] = []
+            template_doc['image']['config']['process']['env'].append(f'GUNICORN_PORT={service_port}')
 
             edge_nodes = service_dict[service_id]['node']
             LOGGER.warning("Using default selection plan.")
@@ -241,6 +246,11 @@ class ECSTemplateHelper(TemplateHelper):
 
         template_json_dict = self._request_ecs_image_config(template_dict['pod-template']['ref'])
         template_doc = self.fill_template(template_dict, template_json_dict, 'controller')
+        
+        controller_port = PortInfo.get_component_port(SystemConstant.CONTROLLER.value)
+        if template_doc['image']['config']['process']['env'] is None:
+            template_doc['image']['config']['process']['env'] = []
+        template_doc['image']['config']['process']['env'].append(f'GUNICORN_PORT={controller_port}')
 
         template_docs = []
         for node in edge_nodes:

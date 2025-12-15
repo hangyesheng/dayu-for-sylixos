@@ -44,7 +44,6 @@ class PortInfo:
     @staticmethod
     def get_service_ports_dict() -> dict:
         component_name = SystemConstant.PROCESSOR.value
-        PortInfo.get_all_ports(component_name)
         ports_dict = PortInfo.get_all_ports(component_name)
         component_ports_dict = {}
         for svc_name in ports_dict:
