@@ -46,11 +46,16 @@ class DetectorProcessor(Processor):
         self.client_thread.start()
 
     def _run_client(self):
-        """运行 VSOA 客户端事件循环"""
-        if err := self.client.connect(f'vsoa://{self.SERVER_NAME}'):
-            LOGGER.error(f'Connect error: {err}')
-        else:
-            self.client.run()
+        """运行 VSOA 客户端事件循环（持续重试直到连接成功）"""
+        while True:
+            err = self.client.connect(f'vsoa://{self.SERVER_NAME}')
+            if err:
+                LOGGER.error(f'Connect error: {err}. Retrying...')
+                time.sleep(1)  # 等待一段时间后重试，避免频繁重连
+            else:
+                LOGGER.info('Connected successfully. Starting client loop.')
+                self.client.run()
+                break
 
     def onconnect(self, client: Client, conn: bool, info: str | dict | list):
         LOGGER.info(f"Connected to {info}, subscribing to {self.SUB_URL}")
