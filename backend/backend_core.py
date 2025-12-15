@@ -56,6 +56,7 @@ class BackendCore:
         self.log_file_path = 'log.json'
 
         self.cur_ecs_service_dict = {}
+        self.ecs_edge_nodes = []
 
         self.default_visualization_image = 'default_visualization.png'
 
@@ -121,6 +122,7 @@ class BackendCore:
 
         kube_edge_nodes = self.kube_template_helper.get_all_selected_edge_nodes(kube_dict)
         ecs_edge_nodes = self.ecs_template_helper.get_all_selected_edge_nodes(ecs_dict)
+        self.ecs_edge_nodes = ecs_edge_nodes
         cloud_node = NodeInfo.get_cloud_node()
 
         first_stage_components = ['scheduler', 'distributor', 'monitor', 'controller']
@@ -589,13 +591,23 @@ class BackendCore:
 
     def prepare_system_visualizations_data(self):
         visualization_data = []
+        
+        ecs_cpu_dict, ecs_memory_dict = ECSHelper.get_ecs_system_visualization(self.ecs_edge_nodes)
+        
         for idx, vf in enumerate(self.system_visualization_configs):
             try:
                 al_name = vf['hook_name']
                 al_params = eval(vf['hook_params']) if 'hook_params' in vf else {}
                 al_params.update({'variables': vf['variables']})
                 vf_func = Context.get_algorithm('SYSTEM_VISUALIZER', al_name=al_name, **al_params)
-                visualization_data.append({"id": idx, "data": vf_func()})
+                vf_data = vf_func()
+                
+                if al_name == "cpu_usage":
+                    vf_data.update(ecs_cpu_dict)
+                elif al_name == "memory_usage":
+                    vf_data.update(ecs_memory_dict)
+                
+                visualization_data.append({"id": idx, "data": vf_data})
             except Exception as e:
                 LOGGER.warning(f"Failed to load system visualization data: {e}")
                 LOGGER.exception(e)

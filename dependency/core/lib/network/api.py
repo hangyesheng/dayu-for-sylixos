@@ -56,6 +56,8 @@ class NetworkAPIPath:
     BACKEND_ECSM_QUERY_ALL_SERVICE = '/api/v1/service?pageNum=1&pageSize=10'
     BACKEND_NODE_INFO = '/node_info'
     BACKEND_PORT_INFO = '/port_info'
+    BACKEND_ECSM_QUERY_NODE_STATUS = '/api/v1/node/status?ids[]={node_id}'
+    BACKEND_ECSM_QUERY_NODE = '/api/v1/node/name/{node_name}'
 
 
 class NetworkAPIMethod:
@@ -116,5 +118,7 @@ class NetworkAPIMethod:
     BACKEND_ECSM_QUERY_ALL_SERVICE = 'GET'
     BACKEND_NODE_INFO = 'GET'
     BACKEND_PORT_INFO = 'GET'
+    BACKEND_ECSM_QUERY_NODE_STATUS = 'GET'
+    BACKEND_ECSM_QUERY_NODE = 'GET'
 
 

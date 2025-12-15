@@ -147,3 +147,95 @@ class ECSHelper:
                 time.sleep(1)
         
         return _result
+    
+    @staticmethod
+    def query_node_id_by_name(node_name):
+        ecsm_host = str(Context.get_parameter('ECSM_HOST'))
+        ecsm_port = str(Context.get_parameter('ECSM_PORT'))
+        remote_api_url = merge_address(ip=ecsm_host, 
+                                    port=ecsm_port, 
+                                    path=NetworkAPIPath.BACKEND_ECSM_QUERY_NODE.format(node_name=node_name))   
+                
+        node_id = None
+        
+        max_retries = 10
+        retry_count = 0
+        while retry_count < max_retries:
+            try:
+                response_data = http_request(
+                    url=remote_api_url,
+                    method=NetworkAPIMethod.BACKEND_ECSM_QUERY_NODE,
+                    timeout=2
+                )
+                
+                # 检查返回值是否有效
+                if not response_data:
+                    LOGGER.warning("Empty response from remote API.")
+                elif isinstance(response_data, dict) and response_data.get('status') == 200:
+                    node_id = response_data["data"]["id"]
+                    break
+                else:
+                    error_msg = response_data.get('message', 'Unknown error') if isinstance(response_data, dict) else 'Invalid response format'
+                    LOGGER.warning(f"Remote API returned non-success status or invalid data: {error_msg}")
+            except Exception as e:
+                LOGGER.warning(f"Failed to fetch or parse remote node info: {e}")
+                
+            retry_count += 1
+            if retry_count < max_retries:
+                time.sleep(1)
+        
+        return node_id
+        
+    @staticmethod
+    def get_ecs_system_visualization(node_name_list):
+        cpu_dict = {}
+        memory_dict = {}
+        
+        for node_name in node_name_list:
+            node_id = ECSHelper.query_node_id_by_name(node_name)
+            
+            ecsm_host = str(Context.get_parameter('ECSM_HOST'))
+            ecsm_port = str(Context.get_parameter('ECSM_PORT'))
+            remote_api_url = merge_address(ip=ecsm_host, 
+                                        port=ecsm_port, 
+                                        path=NetworkAPIPath.BACKEND_ECSM_QUERY_NODE_STATUS.format(node_id=node_id))   
+                    
+            max_retries = 10
+            retry_count = 0
+            while retry_count < max_retries:
+                try:
+                    response_data = http_request(
+                        url=remote_api_url,
+                        method=NetworkAPIMethod.BACKEND_ECSM_QUERY_NODE_STATUS,
+                        timeout=2
+                    )
+                    
+                    # 检查返回值是否有效
+                    if not response_data:
+                        LOGGER.warning("Empty response from remote API.")
+                    elif isinstance(response_data, dict) and response_data.get('status') == 200:
+                        for node in response_data.get('data', {}).get('nodes', []):
+                            # CPU 使用率：直接取 total 字段（单位：百分比）
+                            cpu_usage = node.get('cpuUsage', {}).get('total')
+                            if cpu_usage is not None:
+                                cpu_dict[node_name] = cpu_usage
+
+                            # 内存使用率：计算 (total - free) / total * 100
+                            mem_total = node.get('memoryTotal')
+                            mem_free = node.get('memoryFree')
+                            if mem_total and mem_total > 0:
+                                memory_usage = (mem_total - mem_free) / mem_total * 100
+                                memory_dict[node_name] = round(memory_usage, 2)  # 保留两位小数
+                            
+                        break
+                    else:
+                        error_msg = response_data.get('message', 'Unknown error') if isinstance(response_data, dict) else 'Invalid response format'
+                        LOGGER.warning(f"Remote API returned non-success status or invalid data: {error_msg}")
+                except Exception as e:
+                    LOGGER.warning(f"Failed to fetch or parse remote node info: {e}")
+                    
+                retry_count += 1
+                if retry_count < max_retries:
+                    time.sleep(1)
+            
+        return cpu_dict, memory_dict
