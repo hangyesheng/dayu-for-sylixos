@@ -27,9 +27,10 @@ class ControllerServer:
         self.is_delete_temp_files = Context.get_parameter('DELETE_TEMP_FILES', direct=False)
 
     async def submit_task(self, request, backtask: SkyBackgroundTasks, ):
-        file = self.app.parse_files_from_request(request=request)[0]
+        file_list, data_dict = self.app.parse_data_files_from_request(request=request)
+        file = file_list[0]
         file_data = await file.read()
-        data = self.app.parse_data_from_request(request=request)
+        data = data_dict['data']
         backtask.add_task(self.submit_task_background, data, file_data)
 
     async def process_return(self, request, backtask: SkyBackgroundTasks):

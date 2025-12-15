@@ -12,7 +12,8 @@ import json
 import re
 from urllib.parse import urlparse, parse_qs
 from core.lib.network.sky_server.utils import SkyBackgroundTasks, SkyUploadFile
-from typing import List, Dict, Any
+from core.lib.common import LOGGER
+from typing import List, Dict, Any, Tuple
 
 
 class HTTPRequest:
@@ -141,7 +142,7 @@ class SkyHTTPServer:
         data = json.loads(data_json_str)
         return data
 
-    def parse_files_from_request(self, request) -> List[SkyUploadFile]:
+    def parse_data_files_from_request(self, request) -> Tuple[List[SkyUploadFile], Dict[str, str]]:
         """
         解析 multipart/form-data 请求中的文件，返回内存中的 SkyUploadFile 对象列表
         """
@@ -155,6 +156,7 @@ class SkyHTTPServer:
         body = request.body
         parts = body.split(b"--" + boundary)
         files: List[SkyUploadFile] = []
+        form_data: Dict[str, str] = {}
 
         for part in parts:
             part = part.strip()
@@ -170,28 +172,35 @@ class SkyHTTPServer:
                 if not disposition:
                     continue
 
-                # 提取表单字段名和文件名
+                # 提取 name（所有字段都有 name）
+                name_match = re.search(r'name="([^"]+)"', disposition)
+                if not name_match:
+                    continue
+                field_name = name_match.group(1)
+
+                # 判断是否是文件字段（是否有 filename）
                 filename_match = re.search(r'filename="([^"]+)"', disposition)
-                if not filename_match:
-                    continue  # 非文件字段可以跳过
-                filename = filename_match.group(1)
+                if filename_match:
+                    # 是文件
+                    filename = filename_match.group(1)
+                    content_type_line = next((l for l in head_lines if l.startswith("Content-Type:")), "")
+                    content_type_value = content_type_line.split(":", 1)[1].strip() if content_type_line else "application/octet-stream"
 
-                content_type_line = next((l for l in head_lines if l.startswith("Content-Type:")), "")
-                content_type_value = content_type_line.split(":", 1)[
-                    1].strip() if content_type_line else "application/octet-stream"
-
-                # 封装成 SkyUploadFile
-                upload_file = SkyUploadFile(filename=filename, content_type=content_type_value)
-                # 写入内容
-                upload_file.file.write(content)
-                upload_file.file.seek(0)
-
-                files.append(upload_file)
+                    upload_file = SkyUploadFile(filename=filename, content_type=content_type_value)
+                    upload_file.file.write(content)
+                    upload_file.file.seek(0)
+                    files.append(upload_file)
+                else:
+                    try:
+                        value = content.decode('utf-8')
+                    except UnicodeDecodeError:
+                        value = content.decode('latin1')
+                    form_data[field_name] = value
 
             except Exception as e:
-                print(f"[parse_files_from_request] 解析失败: {e}")
+                print(f"[parse_data_files_from_request] 解析失败: {e}")
 
-        return files
+        return files, form_data
 
     async def _read_request(self, reader: asyncio.StreamReader) -> HTTPRequest | None:
         try:
@@ -299,7 +308,7 @@ class SkyHTTPServer:
             self._handle_client, rh, rp
         )
         addrs = ", ".join(str(sock.getsockname()) for sock in self._server.sockets)
-        print(f"[SkyHTTPServer] Serving on {addrs}")
+        LOGGER.info(f"[SkyHTTPServer] Serving on {addrs}")
         async with self._server:
             await self._server.serve_forever()
 

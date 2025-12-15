@@ -46,29 +46,28 @@ def sky_request(
         # 普通字段
         if data and isinstance(data, dict):
             for k, v in data.items():
-                lines.append(f"--{boundary}")
-                lines.append(f'Content-Disposition: form-data; name="{k}"')
-                lines.append('')
-                lines.append(str(v))
+                lines.append(f"--{boundary}".encode())
+                lines.append(f'Content-Disposition: form-data; name="{k}"'.encode())
+                lines.append(b'')
+                lines.append(str(v).encode())
 
         # 文件字段
         for k, (filename, content, content_type) in files.items():
-            # 如果是文件对象，自动 read()
             if hasattr(content, "read"):
                 content = content.read()
-            # 确保是 bytes
-            if isinstance(content, str):
-                content = content.encode()
+            
+            if not isinstance(content, (bytes, bytearray)):
+                raise TypeError(f"File content for '{k}' must be bytes or BinaryIO, got {type(content)}")
 
-            lines.append(f"--{boundary}")
-            lines.append(f'Content-Disposition: form-data; name="{k}"; filename="{filename}"')
-            lines.append(f"Content-Type: {content_type}")
-            lines.append('')
-            lines.append(content.decode(errors="ignore") if isinstance(content, bytes) else str(content))
+            lines.append(f"--{boundary}".encode())
+            lines.append(f'Content-Disposition: form-data; name="{k}"; filename="{filename}"'.encode())
+            lines.append(f"Content-Type: {content_type}".encode())
+            lines.append(b'')
+            lines.append(content)  # content 必须是原始 bytes！
 
-        lines.append(f"--{boundary}--")
-        lines.append('')
-        req_data = "\r\n".join(lines).encode()
+        lines.append(f"--{boundary}--".encode())
+        lines.append(b'')
+        req_data = b"\r\n".join(lines)  # 直接拼接 bytes，不再 encode
         req_headers["Content-Type"] = f"multipart/form-data; boundary={boundary}"
     elif isinstance(data, dict):
         req_data = urllib_parse.urlencode(data).encode()

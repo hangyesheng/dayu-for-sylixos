@@ -44,9 +44,11 @@ class ProcessorServer:
         """
         修改方案:file和form直接解析，backtask可以正常使用
         """
-        file = self.app.parse_files_from_request(request=request)[0]
+        file_list, data_dict = self.app.parse_data_files_from_request(request=request)
+        file = file_list[0]
         file_data = await file.read()
-        data = self.app.parse_data_from_request(request=request)
+        data = data_dict['data']
+        
         cur_task = Task.deserialize(data)
 
         backtask.add_task(self.process_service_background, data, file_data)
@@ -62,10 +64,11 @@ class ProcessorServer:
                      f'Source: {cur_task.get_source_id()} / Task: {cur_task.get_task_id()} ')
 
     async def process_return_service(self,request):
-
-        file = self.app.parse_files_from_request(request=request)[0]
+        file_list, data_dict = self.app.parse_data_files_from_request(request=request)
+        file = file_list[0]
         file_data = await file.read()
-        data = self.app.parse_data_from_request(request=request)
+        data = data_dict['data']
+        
         cur_task = Task.deserialize(data)
 
         LOGGER.info(f'[Process Return Background] Process task: source {cur_task.get_source_id()}  / '
