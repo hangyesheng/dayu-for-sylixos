@@ -35,11 +35,13 @@ class Controller:
                                            port=self.controller_port,
                                            path=NetworkAPIPath.CONTROLLER_TASK)
 
+        file_path = os.path.join("/apps", cur_task.get_file_path())
+
         sky_request(url=controller_address,
                     method=NetworkAPIMethod.CONTROLLER_TASK,
                     data={'data': cur_task.serialize()},
-                    files={'file': (cur_task.get_file_path(),
-                                    open(cur_task.get_file_path(), 'rb'),
+                    files={'file': (file_path,
+                                    open(file_path, 'rb'),
                                     'multipart/form-data')})
 
         LOGGER.info(f'[To Device {device}] source: {cur_task.get_source_id()}  '
@@ -57,16 +59,18 @@ class Controller:
                                         port=self.service_ports_dict[service],
                                         path=NetworkAPIPath.PROCESSOR_PROCESS)
 
-        if not os.path.exists(cur_task.get_file_path()):
+        file_path = os.path.join("/apps", cur_task.get_file_path())
+
+        if not os.path.exists(file_path):
             LOGGER.warning(f'[Task File Lost] source: {cur_task.get_source_id()}  '
-                           f'task: {cur_task.get_task_id()} file: {cur_task.get_file_path()}')
+                           f'task: {cur_task.get_task_id()} file: {file_path}')
             return
 
         sky_request(url=service_address,
                     method=NetworkAPIMethod.PROCESSOR_PROCESS,
                     data={'data': cur_task.serialize()},
-                    files={'file': (cur_task.get_file_path(),
-                                    open(cur_task.get_file_path(), 'rb'),
+                    files={'file': (file_path,
+                                    open(file_path, 'rb'),
                                     'multipart/form-data')}
                     )
 
@@ -75,15 +79,18 @@ class Controller:
 
     def send_task_to_distributor(self, cur_task: Task):
         self.record_transmit_ts(cur_task=cur_task, is_end=False)
-        if not os.path.exists(cur_task.get_file_path()):
+        
+        file_path = os.path.join("/apps", cur_task.get_file_path())
+        
+        if not os.path.exists(file_path):
             LOGGER.warning(f'[Task File Lost] source: {cur_task.get_source_id()}  '
-                           f'task: {cur_task.get_task_id()} file: {cur_task.get_file_path()}')
+                           f'task: {cur_task.get_task_id()} file: {file_path}')
             return
-        file_content = open(cur_task.get_file_path(), 'rb') if self.is_display else b''
+        file_content = open(file_path, 'rb') if self.is_display else b''
 
         sky_request(url=self.distribute_address,
                     method=NetworkAPIMethod.DISTRIBUTOR_DISTRIBUTE,
-                    files={'file': (cur_task.get_file_path(), file_content, 'multipart/form-data')},
+                    files={'file': (file_path, file_content, 'multipart/form-data')},
                     data={'data': cur_task.serialize()})
 
         LOGGER.info(f'[To Distributor] source: {cur_task.get_source_id()}  task: {cur_task.get_task_id()} '

@@ -1,4 +1,5 @@
 import json
+import os
 
 from core.lib.common import Context, LOGGER, SystemConstant
 from core.lib.content import Task
@@ -84,16 +85,24 @@ class Generator:
                                            port=self.controller_port,
                                            path=NetworkAPIPath.CONTROLLER_TASK)
         self.record_transmit_start_ts(cur_task)
-        sky_request(url=controller_address,
+        
+        file_path = os.path.join("/apps", cur_task.get_file_path())
+        try:
+            response = sky_request(url=controller_address,
                     method=NetworkAPIMethod.CONTROLLER_TASK,
                     data={'data': cur_task.serialize()},
-                    files={'file': (cur_task.get_file_path(),
-                                    open(cur_task.get_file_path(), 'rb'),
+                    files={'file': (file_path,
+                                    open(file_path, 'rb'),
                                     'multipart/form-data')}
                     )
-        LOGGER.info(f'[To Controller {dst_device}] source: {cur_task.get_source_id()}  '
+            LOGGER.info(f"[DEBUG] Response status: {response.status_code}, body: {response.text}")
+        except Exception as e:
+            LOGGER.error(f"[ERROR] Failed to send task to controller: {e}")
+            
+        LOGGER.info(f'[To Controller {dst_device}] url: {controller_address}  '
+                    f'source: {cur_task.get_source_id()}  '
                     f'task: {cur_task.get_task_id()}  '
-                    f'file: {cur_task.get_file_path()}')
+                    f'file: {file_path}')
 
     def run(self):
         assert None, 'Base Generator should not be invoked directly!'

@@ -754,21 +754,22 @@ class BackendCore:
                                            port=distributor_port,
                                            path=NetworkAPIPath.DISTRIBUTOR_CLEAR_DATABASE)
 
-    def get_file_result(self, file_name):
+    def get_file_result(self, file_path):
         if not self.result_file_url:
             return ''
         response = http_request(self.result_file_url,
                                 method=NetworkAPIMethod.DISTRIBUTOR_FILE,
                                 no_decode=True,
-                                json={'file': file_name},
+                                json={'file': file_path},
                                 stream=True)
         if response is None:
             self.result_file_url = None
             return ''
-        with open(file_name, 'wb') as file_out:
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        with open(file_path, 'wb') as file_out:
             for chunk in response.iter_content(chunk_size=8192):
                 file_out.write(chunk)
-        return file_name
+        return file_path
 
     def download_log_file(self):
         self.parse_base_info()

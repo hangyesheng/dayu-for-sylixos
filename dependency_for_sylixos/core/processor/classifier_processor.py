@@ -1,3 +1,4 @@
+import os
 
 from .processor import Processor
 
@@ -16,7 +17,8 @@ class ClassifierProcessor(Processor):
     def __call__(self, task: Task):
         import cv2
 
-        data_file_path = task.get_file_path()
+        data_file_path = os.path.join("/apps", task.get_file_path())
+        
         cap = cv2.VideoCapture(data_file_path)
         content = task.get_prev_content()
         if content is None:

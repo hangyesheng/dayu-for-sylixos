@@ -29,8 +29,7 @@ class RtspVideoGetter(BaseDataGetter, abc.ABC):
         FileOps.remove_file(file_name)
 
     def __call__(self, system):
-        saved_dir = system.generator_saved_dir
-        file_name = saved_dir + f"{self.file_index}.mp4"
+        file_name = system.absolute_saved_dir + f"{self.file_index}.mp4"
 
         while not os.path.exists(file_name):
             time.sleep(0.5)
@@ -41,7 +40,7 @@ class RtspVideoGetter(BaseDataGetter, abc.ABC):
         new_task_id = Counter.get_count('task_id')
         threading.Thread(target=self.generate_and_send_new_task,
                          args=(system,
-                               file_name,
+                               system.generator_saved_dir + f"{self.file_index}.mp4",
                                new_task_id,
                                copy.deepcopy(system.task_dag),
                                copy.deepcopy(system.meta_data),)).start()

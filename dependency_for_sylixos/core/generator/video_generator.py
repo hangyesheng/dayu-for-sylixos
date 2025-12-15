@@ -2,6 +2,7 @@ import json
 import subprocess
 import signal
 import sys
+import os
 from contextlib import contextmanager
 
 from .generator import Generator
@@ -57,15 +58,17 @@ class VideoGenerator(Generator):
         # initialize with default schedule policy
         self.after_schedule_operation(self, None)
 
-        self.generator_saved_dir = f"/apps/generator/data_of_source_{self.source_id}/"
+        self.generator_saved_dir = f"data_of_source_{self.source_id}/"
         FileOps.remove_file(self.generator_saved_dir)
         FileOps.create_directory(self.generator_saved_dir)
+        
+        self.absolute_saved_dir = os.path.join("/apps", self.generator_saved_dir.lstrip("/"))
 
-        self.write_meta_data_to_file(self.meta_data, self.generator_saved_dir + 'meta.json')
+        self.write_meta_data_to_file(self.meta_data, self.absolute_saved_dir + 'meta.json')
         
         command = ["/apps/generator/rtsp_solverex", "--url", self.video_data_source, 
-                                    "--saved_dir", self.generator_saved_dir, 
-                                    "--meta_file", self.generator_saved_dir + "meta.json"]
+                                    "--saved_dir", self.absolute_saved_dir, 
+                                    "--meta_file", self.absolute_saved_dir + "meta.json"]
         
         LOGGER.info(f"Starting rtsp_solverex with command: {' '.join(command)}")
 
@@ -76,7 +79,7 @@ class VideoGenerator(Generator):
                 if not self.getter_filter(self):
                     LOGGER.info('[Filter Getter] step to next round of getter.')
                     continue
-                self.write_meta_data_to_file(self.meta_data, self.generator_saved_dir + 'meta.json')
+                self.write_meta_data_to_file(self.meta_data, self.absolute_saved_dir + 'meta.json')
                 LOGGER.info(f"Start getting data from source {self.source_id}...")
                 self.data_getter(self)
 

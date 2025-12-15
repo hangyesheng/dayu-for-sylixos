@@ -2,6 +2,7 @@ from ast import parse
 import time
 import json
 import threading
+import os
 
 from .processor import Processor
 
@@ -80,7 +81,7 @@ class DetectorProcessor(Processor):
             
     def __call__(self, task: Task):
 
-        data_file_path = task.get_file_path()
+        data_file_path = os.path.join("/apps", task.get_file_path())
 
         # 调用ecs_yolo_iamge, 可能需要从meta_data中知道有几帧，然后subsribe后接收到对应数量的帧的结果，并把结果转换回现在的格式再返回
 
@@ -136,7 +137,7 @@ class DetectorProcessor(Processor):
         if len(result) == 0:
             LOGGER.critical('ERROR: image list length is 0')
             LOGGER.critical(f'Source: {task.get_source_id()}, Task: {task.get_task_id()}')
-            LOGGER.critical(f'file_path: {task.get_file_path()}')
+            LOGGER.critical(f'file_path: {data_file_path}')
             return None
 
         task = self.get_scenario(result, task)
