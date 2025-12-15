@@ -193,6 +193,17 @@ class ECSTemplateHelper(TemplateHelper):
 
             template_doc["image"]["config"]["process"]["env"].extend(new_env_list)
             
+            # 将 rtsp_solverex 相关设备添加到 devices 列表中
+            rtsp_solverex_devices = [
+                {"path": "/dev/card0", "access": "rw"},
+                {"path": "/dev/mpp_service", "access": "rw"},
+                {"path": "/dev/rga", "access": "rw"}
+            ]
+            if template_doc["image"]["config"]["sylixos"]["devices"] is None:
+                template_doc["image"]["config"]["sylixos"]["devices"] = rtsp_solverex_devices
+            else:
+                template_doc["image"]["config"]["sylixos"]["devices"].extend(rtsp_solverex_devices)
+            
             # 添加edge node
             template_doc["node"]["names"].append(node)
             template_doc['image']['config']['process']['env'].append(f'NODE_NAME={node}')
