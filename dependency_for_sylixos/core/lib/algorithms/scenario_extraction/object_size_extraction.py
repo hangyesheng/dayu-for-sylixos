@@ -12,16 +12,17 @@ class ObjectSizeExtraction(BaseExtraction, abc.ABC):
         super().__init__()
 
     def __call__(self, result, task):
-        import numpy as np
-        
         obj_size = []
         frame_size = VideoOps.text2resolution(task.get_metadata()['resolution'])
-        for frame_result in result:
-            bboxes = frame_result[0]
-            boxes_size = 0 if len(bboxes) == 0 else \
-                np.mean([((box[2] - box[0]) * (box[3] - box[1]))
-                         / (frame_size[0] * frame_size[1]) for box in bboxes])
+        frame_area = frame_size[0] * frame_size[1]
 
+        for frame_bboxes in result:
+            if not frame_bboxes:
+                boxes_size = 0.0
+            else:
+                areas = [((box[2] - box[0]) * (box[3] - box[1])) / frame_area for box in frame_bboxes]
+                boxes_size = sum(areas) / len(areas)
             obj_size.append(boxes_size)
+
 
         return obj_size

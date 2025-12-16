@@ -64,7 +64,23 @@ class DetectorProcessor(Processor):
 
     def onmessage(self, client: Client, url: str, payload: vsoa.Payload, quick: bool):
         try:
-            data = json.loads(str(payload.data))
+            if isinstance(payload.data, (bytes, bytearray)):
+                try:
+                    json_str = payload.data.decode('utf-8')
+                except UnicodeDecodeError as e:
+                    LOGGER.error(f"Failed to decode payload as UTF-8: {e}")
+                    return
+            elif isinstance(payload.data, str):
+                json_str = payload.data
+            else:
+                LOGGER.error(f"Unexpected payload.data type: {type(payload.data)}")
+                return
+
+            if not json_str.strip():
+                LOGGER.error("Received empty JSON string")
+                return
+
+            data = json.loads(json_str)
             frame_id = data.get('frame_id')
             if frame_id is not None:
                 self.received_results[frame_id] = data
@@ -72,8 +88,10 @@ class DetectorProcessor(Processor):
                 # 如果收到预期帧数，触发事件
                 if self.received_count >= self.total_frames:
                     self.results_event.set()
+        except json.JSONDecodeError as e:
+            LOGGER.error(f"Invalid JSON received: '{json_str[:100]}...', error: {e}")
         except Exception as e:
-            LOGGER.error(f"Error parsing yolo result: {e}")
+            LOGGER.error(f"Unexpected error parsing YOLO result: {e}")
 
     def onreply(self, client: Client, header: vsoa.Header, payload: vsoa.Payload):
         if header is None or payload is None:
@@ -146,7 +164,7 @@ class DetectorProcessor(Processor):
             return None
 
         task = self.get_scenario(result, task)
-        task.set_current_content(convert_ndarray_to_list(result))
+        task.set_current_content(result)
 
         return task
 

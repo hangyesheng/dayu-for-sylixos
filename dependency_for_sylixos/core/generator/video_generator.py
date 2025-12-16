@@ -58,7 +58,7 @@ class VideoGenerator(Generator):
         # initialize with default schedule policy
         self.after_schedule_operation(self, None)
 
-        self.generator_saved_dir = f"data_of_source_{self.source_id}/"
+        self.generator_saved_dir = f"video/data_of_source_{self.source_id}/"
         FileOps.remove_file(self.generator_saved_dir)
         FileOps.create_directory(self.generator_saved_dir)
         

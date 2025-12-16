@@ -14,10 +14,7 @@ class ObjectNumberExtraction(BaseExtraction, abc.ABC):
     def __call__(self, result, task):
         obj_num = []
 
-        for frame_result in result:
-            bboxes = frame_result[0]
-            boxes_num = len(bboxes)
-
-            obj_num.append(boxes_num)
+        for frame_bboxes in result:
+            obj_num.append(len(frame_bboxes))
 
         return obj_num

@@ -10,11 +10,15 @@ MOUNT /usr/bin /usr/bin rx
 
 MOUNT /usr/lib /usr/lib rx
 
+MOUNT /etc/vsoa.pos /etc/vsoa.pos rx
+
+MOUNT /apps/video /apps/video rwx
+
 ENV PATH=/usr/bin:/bin:/usr/pkg/sbin:/sbin:/usr/local/bin
 
 ENV LD_LIBRARY_PATH=/qt/lib:/usr/lib:/lib:/usr/local/lib:/lib/jsre:/lib/vsoa
 
-
+ENV VSOA_POS_SERVER=192.168.200.101:13000
 
 ENV TZ=Asia/Shanghai
 

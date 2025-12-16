@@ -463,5 +463,9 @@ class Task:
 
     @classmethod
     def deserialize(cls, data: str):
-        data = json.loads(data)
-        return cls.from_dict(data)
+        if isinstance(data, dict):
+            return cls.from_dict(data)
+        elif isinstance(data, (str, bytes)):
+            return cls.from_dict(json.loads(data))
+        else:
+            raise TypeError("deserialize expects str, bytes, or dict")
