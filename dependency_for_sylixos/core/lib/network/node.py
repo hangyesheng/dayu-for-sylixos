@@ -1,4 +1,5 @@
 from typing import List
+import time
 
 from core.lib.network import find_all_ips
 from core.lib.common import Context, LOGGER
@@ -44,18 +45,37 @@ class NodeInfo:
                                         port=backend_port,
                                         path=NetworkAPIPath.BACKEND_NODE_INFO)
         
-        response = sky_request(
-            url=remote_api_url,
-            method=NetworkAPIMethod.BACKEND_NODE_INFO
-        )
+        node_dict = {}
+        node_dict_reverse = {}
+        node_role = {}
         
-        response_data = response.json()
-        if response_data:
-            node_dict = response_data['node_dict']
-            node_dict_reverse = response_data['node_dict_reverse']
-            node_role = response_data['node_role']
-        else:
-            LOGGER.error('Failed to get node info from backend!')
+        max_retries = 10
+        retry_count = 0
+        while retry_count < max_retries:
+            try:
+                response = sky_request(
+                    url=remote_api_url,
+                    method=NetworkAPIMethod.BACKEND_NODE_INFO
+                )
+                response_data = response.json()
+                
+                # 检查返回值是否有效
+                if not response_data:
+                    LOGGER.warning("Empty response from remote API.")
+                elif isinstance(response_data, dict):
+                    node_dict = response_data['node_dict']
+                    node_dict_reverse = response_data['node_dict_reverse']
+                    node_role = response_data['node_role']
+                    
+                    break
+                else:
+                    LOGGER.warning(f"Remote API returned non-success status or invalid data")
+            except Exception as e:
+                LOGGER.warning(f"Failed to fetch or parse remote node info: {e}")
+                
+            retry_count += 1
+            if retry_count < max_retries:
+                time.sleep(1)
 
         return node_dict, node_dict_reverse, node_role
 

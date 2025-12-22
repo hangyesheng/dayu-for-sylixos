@@ -1,3 +1,4 @@
+import time
 
 from core.lib.common import Context, SystemConstant, LOGGER
 from .sky_server import sky_request
@@ -24,21 +25,36 @@ class PortInfo:
                                         port=backend_port,
                                         path=NetworkAPIPath.BACKEND_PORT_INFO)
         
-        response = sky_request(
-            url=remote_api_url,
-            method=NetworkAPIMethod.BACKEND_PORT_INFO,
-            data={'keyword': keyword}
-        )
+        ports_dict = {}
         
-        response_data = response.json()
+        max_retries = 10
+        retry_count = 0
+        while retry_count < max_retries:
+            try:
+                response = sky_request(
+                    url=remote_api_url,
+                    method=NetworkAPIMethod.BACKEND_PORT_INFO,
+                    data={'keyword': keyword}
+                )
+                response_data = response.json()
+                
+                # 检查返回值是否有效
+                if not response_data:
+                    LOGGER.warning("Empty response from remote API.")
+                elif isinstance(response_data, dict):
+                    LOGGER.info(f"Get port info from backend: {response_data}")
+                    ports_dict = response_data['ports_dict']
+                    
+                    break
+                else:
+                    LOGGER.warning(f"Remote API returned non-success status or invalid data")
+            except Exception as e:
+                LOGGER.warning(f"Failed to fetch or parse remote node info: {e}")
+                
+            retry_count += 1
+            if retry_count < max_retries:
+                time.sleep(1)       
         
-        LOGGER.info(f"Get port info from backend: {response_data}")
-        
-        if response_data:
-            ports_dict = response_data['ports_dict']
-        else:
-            LOGGER.error('Failed to get port info from backend!')
-            
         return ports_dict
 
     @staticmethod
