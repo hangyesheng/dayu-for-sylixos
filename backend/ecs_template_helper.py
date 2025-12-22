@@ -236,6 +236,7 @@ class ECSTemplateHelper(TemplateHelper):
                 new_template_doc = copy.deepcopy(template_doc)
                 new_template_doc['node']['names'].append(node)
                 new_template_doc['image']['config']['process']['env'].append(f'NODE_NAME={node}')
+                new_template_doc['image']['config']['process']['env'].append(f'SERVICE_NAME=processor-{service_name}')
                 template_docs.append(new_template_doc)
 
         return template_docs
