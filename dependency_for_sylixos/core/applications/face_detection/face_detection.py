@@ -104,7 +104,7 @@ class FaceDetection:
         # 构造请求数据
         data_payload = {
             'path': data_file_path,
-            # 'class_filter_arr': [0], # 只检测人脸
+            'class_filter_arr': [1], # 只检测人脸
             'nms_score_threshold': 0.3
         }
         data_payload = parser.json.dumps(data_payload).encode()

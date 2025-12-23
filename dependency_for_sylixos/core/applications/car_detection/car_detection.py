@@ -104,7 +104,7 @@ class CarDetection:
         # 构造请求数据
         data_payload = {
             'path': data_file_path,
-            # 'class_filter_arr': [2, 5, 7], # 只检测汽车、公交车和卡车
+            'class_filter_arr': [3, 6, 9], # 只检测汽车、公交车和卡车
             'nms_score_threshold': 0.3
         }
         data_payload = parser.json.dumps(data_payload).encode()
