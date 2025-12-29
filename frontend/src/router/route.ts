@@ -1,4 +1,4 @@
-import {RouteRecordRaw} from 'vue-router';
+import { RouteRecordRaw } from 'vue-router';
 
 /**
  * 建议：路由 path 路径与文件夹名称相同，找文件可浏览器地址找，方便定位文件位置
@@ -102,6 +102,18 @@ export const dynamicRoutes: Array<RouteRecordRaw> = [
                     isIframe: false,
                     roles: ['dayu', 'common'],
                     icon: 'iconfont icon-xingqiu',
+                },
+            },
+            {
+                path: '/ecsm',
+                name: 'ecsm',
+                meta: {
+                    title: 'message.router.ecsm',
+                    isLink: 'http://114.212.81.186:13001/',
+                    isHide: false,
+                    isIframe: true,
+                    roles: ['dayu', 'common'],
+                    icon: 'iconfont icon-diannao1',
                 },
             },
             {

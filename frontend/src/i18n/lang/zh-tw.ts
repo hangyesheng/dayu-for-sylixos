@@ -4,6 +4,7 @@ export default {
         install: 'Application Installation',
         dag: 'DAG Orchestration',
         datasource: 'Source Configuration',
+        ecsm: 'ECS Image Management',
         result: 'Result Visualization',
         system: 'System Visualization',
 
