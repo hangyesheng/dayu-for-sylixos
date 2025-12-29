@@ -33,12 +33,11 @@ class RtspVideoGetter(BaseDataGetter, abc.ABC):
         next_file_name = system.absolute_saved_dir + f"{self.file_index + 1}.mp4"
 
         while not os.path.exists(next_file_name):
-            time.sleep(0.5)
+            time.sleep(0.05)
         
         # 检测到下一个文件，上传当前已经完整的文件
         LOGGER.info(f"New video file detected: {next_file_name}, submitting task for {file_name}")
 
-        # generate tasks in parallel to avoid getting stuck with video compression
         new_task_id = Counter.get_count('task_id')
         threading.Thread(target=self.generate_and_send_new_task,
                          args=(system,
