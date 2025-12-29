@@ -777,7 +777,9 @@ class BackendCore:
         if response is None:
             self.result_file_url = None
             return ''
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        dir_path = os.path.dirname(file_path)
+        if dir_path:
+            os.makedirs(dir_path, exist_ok=True)
         with open(file_path, 'wb') as file_out:
             for chunk in response.iter_content(chunk_size=8192):
                 file_out.write(chunk)

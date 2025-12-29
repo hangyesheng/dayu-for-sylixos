@@ -7,7 +7,9 @@ class FileOps:
     def save_data_file(task, file_data):
         file_path = task.get_file_path()
         file_path = os.path.join("/apps", file_path.lstrip("/"))
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        dir_path = os.path.dirname(file_path)
+        if dir_path:
+            os.makedirs(dir_path, exist_ok=True)
         with open(file_path, 'wb') as buffer:
             buffer.write(file_data)
 
