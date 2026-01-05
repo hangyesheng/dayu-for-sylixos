@@ -16,7 +16,6 @@ class FileOps:
     @staticmethod
     def remove_data_file(task):
         file_path = task.get_file_path()
-        file_path = os.path.join("/apps", file_path.lstrip("/"))
         FileOps.remove_file(file_path)
 
     @staticmethod
