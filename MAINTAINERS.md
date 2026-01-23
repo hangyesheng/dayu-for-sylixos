@@ -24,6 +24,7 @@ describes governance guidelines and responsibilities.
 |-------------|--------------------------------------------------|--------------------|---------------------------|
 | Wenhui Zhou | @[zwh2119](https://github.com/zwh2119)           | Nanjing University | <whzhou@smail.nju.edu.cn> |
 | Hao Wu      | @[skyrimforest](https://github.com/skyrimforest) | Nanjing University | <hitskyrim@qq.com>        |
+| Yesheng Hang       | @[hangyesheng](https://github.com/hangyesheng) | Nanjing University | <hangys@qq.com>        |
 
 ## Contributors
 
@@ -32,5 +33,5 @@ describes governance guidelines and responsibilities.
 | Wenhui Zhou  | @[zwh2119](https://github.com/zwh2119)           | Nanjing University | <whzhou@smail.nju.edu.cn> |
 | Bingyun Yang | @[AdaYangOlzz](https://github.com/AdaYangOlzz)   | Nanjing University | <adayangolzz@163.com>     |
 | Hao Wu       | @[skyrimforest](https://github.com/skyrimforest) | Nanjing University | <hitskyrim@qq.com>        |
+| Yesheng Hang       | @[hangyesheng](https://github.com/hangyesheng) | Nanjing University | <hangys@qq.com>        |
 | Wenyi Dai    | @[kangarin](https://github.com/kangarin)         | Nanjing University | <wydai@smail.nju.edu.cn>  |
-
