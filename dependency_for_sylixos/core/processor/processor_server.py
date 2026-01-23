@@ -1,4 +1,5 @@
 import threading
+import time
 
 from core.lib.network import SkyHTTPServer, sky_request, SkyBackgroundTasks
 from core.lib.common import Context, SystemConstant
@@ -56,8 +57,11 @@ class ProcessorServer:
                      f'Source: {cur_task.get_source_id()} / Task: {cur_task.get_task_id()} ')
 
     def process_service_background(self, data, file_data):
+        start_time = time.time()
         cur_task = Task.deserialize(data)
         FileOps.save_data_file(cur_task, file_data)
+        end_time = time.time()
+        LOGGER.debug(f'[File Save] Time taken to save file: {end_time - start_time:.4f} seconds')
         self.task_queue.put(cur_task)
         LOGGER.debug(f'[Task Queue] Queue Size (receive request): {self.task_queue.size()}')
         LOGGER.debug(f'[Monitor Task] (Process Request Background) '

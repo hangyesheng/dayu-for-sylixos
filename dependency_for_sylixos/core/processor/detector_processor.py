@@ -1,4 +1,5 @@
 import os
+import time
 
 from .processor import Processor
 
@@ -38,7 +39,10 @@ class DetectorProcessor(Processor):
     def __call__(self, task: Task):
         data_file_path = os.path.join("/apps", task.get_file_path())
 
+        start_time = time.time()
         result = self.detector(data_file_path, task)
+        end_time = time.time()
+        LOGGER.debug(f'[Detector Processor] Detection Time: {end_time - start_time:.4f} seconds')
 
         # 如果未收到任何结果，返回空
         if len(result) == 0:
@@ -47,6 +51,7 @@ class DetectorProcessor(Processor):
             LOGGER.critical(f'file_path: {data_file_path}')
             return None
 
+        start_time = time.time()
         task = self.get_scenario(result, task)
 
         frame_size = (640, 640)
@@ -55,6 +60,8 @@ class DetectorProcessor(Processor):
             result[idx] = self.scale_bboxes(result[idx], frame_size, target_size)
             
         task.set_current_content([result])
+        end_time = time.time()
+        LOGGER.debug(f'[Detector Processor] Post-processing Time: {end_time - start_time:.4f} seconds')
 
         return task
 
